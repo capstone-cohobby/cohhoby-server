@@ -1,5 +1,5 @@
 git add .README.md
-.gradle
+cohobby/.gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
