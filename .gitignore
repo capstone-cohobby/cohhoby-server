@@ -3,11 +3,9 @@
 Thumbs.db
 
 ### Gradle ###
-.gradle/
-build/
+**/.gradle/
+**/build/
 !gradle/wrapper/gradle-wrapper.jar   # Wrapper는 꼭 포함
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 ### 로그 / 임시 파일 ###
 *.log

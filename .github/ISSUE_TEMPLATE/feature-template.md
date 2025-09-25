@@ -1,9 +1,12 @@
 ---
-name: Feature
-about: 새로운 기능 개발 요청을 위한 이슈 템플릿
-title: '[Feat] '
-labels: ['']
+name: feature-template.md
+about: feature issue
+title: "[Feat]"
+labels: ''
 assignees: ''
+
+---
+
 ---
 
 ## ✨ 기능 설명
