@@ -1,0 +1,49 @@
+### 운영체제별 불필요 파일 ###
+.DS_Store
+Thumbs.db
+
+### Gradle ###
+**/.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar   # Wrapper는 꼭 포함
+
+### 로그 / 임시 파일 ###
+*.log
+*.tmp
+*.swp
+*.swo
+
+### Spring Tool Suite (STS) ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### 기타 ###
+/target/
+
