@@ -4,6 +4,7 @@ import com.backthree.cohobby.domain.common.BaseTimeEntity;
 import com.backthree.cohobby.domain.rent.entity.Rent;
 import com.backthree.cohobby.domain.user.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -37,4 +38,22 @@ public class Report extends BaseTimeEntity {
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "userId", nullable = false)
     private User user;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "rent_id", nullable = false)
+    private Rent rent1;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user1;
+
+    public void setUser1(User user1) {
+        this.user1 = user1;
+    }
+
+    public void setRent1(Rent rent1) {
+        this.rent1 = rent1;
+    }
 }
