@@ -3,6 +3,7 @@ package com.backthree.cohobby.domain.chatting.entity;
 import com.backthree.cohobby.domain.common.BaseTimeEntity;
 import com.backthree.cohobby.domain.user.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -29,4 +30,22 @@ public class Chatting extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receiverId", nullable = false)
     private User receiver;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private User receiver1;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender1;
+
+    public void setSender1(User sender1) {
+        this.sender1 = sender1;
+    }
+
+    public void setReceiver1(User receiver1) {
+        this.receiver1 = receiver1;
+    }
 }
