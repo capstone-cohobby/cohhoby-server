@@ -31,21 +31,4 @@ public class Chatting extends BaseTimeEntity {
     @JoinColumn(name = "receiverId", nullable = false)
     private User receiver;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "receiver_id", nullable = false)
-    private User receiver1;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "sender_id", nullable = false)
-    private User sender1;
-
-    public void setSender1(User sender1) {
-        this.sender1 = sender1;
-    }
-
-    public void setReceiver1(User receiver1) {
-        this.receiver1 = receiver1;
-    }
 }
