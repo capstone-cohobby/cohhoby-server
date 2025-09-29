@@ -54,21 +54,6 @@ public class Rent extends BaseTimeEntity {
     @JoinColumn(name = "postId", nullable = false)
     private Post post;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "borrower_id", nullable = false)
-    private User borrower1;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner1;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id", nullable = false)
-    private Post post1;
-
     @OneToMany(mappedBy = "rent")
     private Set<Payment> payments = new LinkedHashSet<>();
 
@@ -81,31 +66,4 @@ public class Rent extends BaseTimeEntity {
     @OneToMany(mappedBy = "rent")
     private Set<Review> reviews = new LinkedHashSet<>();
 
-    public void setReviews(Set<Review> reviews) {
-        this.reviews = reviews;
-    }
-
-    public void setReports(Set<Report> reports) {
-        this.reports = reports;
-    }
-
-    public void setRentAlerts(Set<RentAlert> rentAlerts) {
-        this.rentAlerts = rentAlerts;
-    }
-
-    public void setPayments(Set<Payment> payments) {
-        this.payments = payments;
-    }
-
-    public void setPost1(Post post1) {
-        this.post1 = post1;
-    }
-
-    public void setOwner1(User owner1) {
-        this.owner1 = owner1;
-    }
-
-    public void setBorrower1(User borrower1) {
-        this.borrower1 = borrower1;
-    }
 }

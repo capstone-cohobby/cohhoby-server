@@ -35,11 +35,4 @@ public class Hobby extends BaseTimeEntity {
     @OneToMany(mappedBy = "hobby")
     private Set<Post> posts = new LinkedHashSet<>();
 
-    public void setPosts(Set<Post> posts) {
-        this.posts = posts;
-    }
-
-    public void setContributions(Set<Contribution> contributions) {
-        this.contributions = contributions;
-    }
 }

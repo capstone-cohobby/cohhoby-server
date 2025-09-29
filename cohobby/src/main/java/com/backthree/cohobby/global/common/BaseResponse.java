@@ -9,9 +9,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 import java.util.Collections;
 
+@Getter
 @AllArgsConstructor(access= AccessLevel.PRIVATE)
 @JsonPropertyOrder({"isSuccess","code","message","result"})
 public class BaseResponse<T> {

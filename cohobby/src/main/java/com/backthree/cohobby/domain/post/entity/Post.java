@@ -19,8 +19,8 @@ public class Post extends BaseTimeEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 127)
-    private String title;
+    @Column(length = 63)
+    private String goods;
 
     @Column(length = 500)
     private String description;
@@ -31,12 +31,20 @@ public class Post extends BaseTimeEntity {
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private PostStatus status = PostStatus.DRAFT;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hobbyId")
     private Hobby hobby;
 
     @OneToMany(mappedBy = "post")
     private Set<Image> images = new LinkedHashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToMany
     @JoinTable(name = "likes",
@@ -47,15 +55,4 @@ public class Post extends BaseTimeEntity {
     @OneToMany(mappedBy = "post")
     private Set<Rent> rents = new LinkedHashSet<>();
 
-    public void setRents(Set<Rent> rents) {
-        this.rents = rents;
-    }
-
-    public void setUsers(Set<User> users) {
-        this.users = users;
-    }
-
-    public void setImages(Set<Image> images) {
-        this.images = images;
-    }
 }
