@@ -7,21 +7,28 @@ import com.backthree.cohobby.global.common.response.status.SuccessStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.Collections;
 
 @Getter
 @AllArgsConstructor(access= AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED, force = true)
 @JsonPropertyOrder({"isSuccess","code","message","result"})
+@Schema(name = "BaseResponse")
 public class BaseResponse<T> {
 
     @JsonProperty("isSuccess")
+    @Schema(description = "성공 여부", example = "true")
     private final Boolean isSuccess;
 
+    @Schema(description = "응답/에러 코드", example = "POST_CREATED")
     private final String code;
+    @Schema(description = "응답 데이터")
     private final String message;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
