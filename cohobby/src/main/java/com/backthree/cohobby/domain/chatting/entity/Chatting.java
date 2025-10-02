@@ -17,6 +17,10 @@ public class Chatting extends BaseTimeEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "roomId", nullable = false)
+    private ChattingRoom room;
+
     @Column(length = 511, nullable = false)
     private String text;
 
