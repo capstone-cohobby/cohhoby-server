@@ -16,17 +16,16 @@ import lombok.NoArgsConstructor;
 import java.util.Collections;
 
 @Getter
-@AllArgsConstructor(access= AccessLevel.PRIVATE)
+@AllArgsConstructor(access= AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED, force = true)
 @JsonPropertyOrder({"isSuccess","code","message","result"})
-@Schema(name = "BaseResponse")
 public class BaseResponse<T> {
 
     @JsonProperty("isSuccess")
-    @Schema(description = "성공 여부", example = "true")
+    @Schema(description = "성공 여부")
     private final Boolean isSuccess;
 
-    @Schema(description = "응답/에러 코드", example = "POST_CREATED")
+    @Schema(description = "응답/에러 코드")
     private final String code;
     @Schema(description = "응답 데이터")
     private final String message;

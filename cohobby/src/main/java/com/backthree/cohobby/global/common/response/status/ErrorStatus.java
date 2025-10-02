@@ -19,10 +19,19 @@ public enum ErrorStatus implements BaseErrorCode {
     INVALID_PARAMETER(HttpStatus.BAD_REQUEST, "COMMON405", "유효하지 않은 파라미터입니다."),
 
     //user 관련 에러
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER404", "유저를 찾을 수 없습니다"),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER4041", "유저를 찾을 수 없습니다"),
 
     //hobby 관련 에러
-    HOBBY_NOT_FOUND(HttpStatus.NOT_FOUND,"HOBBY404", "취미를 찾을 수 없습니다");
+    HOBBY_NOT_FOUND(HttpStatus.NOT_FOUND,"HOBBY4041", "취미를 찾을 수 없습니다"),
+
+    //post 관련 에러
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND,"POST4041", "post를 찾을 수 없습니다"),
+    POST_STATUS_CONFLICT(HttpStatus.CONFLICT,"POST4091","잘못된 post status"),
+    POST_AUTHOR_MISMATCH(HttpStatus.FORBIDDEN,"POST4031","자신이 작성한 post가 아닙니다"),
+
+    //post 422
+    AVAILABLE_PERIOD_INVALID(HttpStatus.UNPROCESSABLE_ENTITY,"POST4221", "대여 가능 기간이 올바르지 않습니다."),
+    PURCHASE_DATE_IN_FUTURE(HttpStatus.UNPROCESSABLE_ENTITY,"POST4221", "구입일은 미래일 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

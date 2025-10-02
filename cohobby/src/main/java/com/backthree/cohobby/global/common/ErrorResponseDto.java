@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-@Schema(name = "ErrorResponse")
+@Schema(name = "ErrorResponseDto")
 public class ErrorResponseDto {
     @JsonProperty("isSuccess")
     @Schema(description = "성공 여부", example = "false")
