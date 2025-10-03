@@ -1,12 +1,8 @@
 spring:
-  security:
-    user:
-      name: admin
-      password: 1111
+  profiles: # 'local' 프로필을 활성화하여 application-local.yml 설정을 불러오도록 지정
+    active: local
   datasource:
     url: jdbc:mysql://localhost:3306/cohobby
-    username: root
-    password: 1569
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
