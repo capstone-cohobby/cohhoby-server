@@ -1,14 +1,14 @@
 package com.backthree.cohobby.global.common.response.status;
 
-import com.backthree.cohobby.global.common.response.code.BaseErrorCode;
-import com.backthree.cohobby.global.common.response.code.ErrorReasonDTO;
+import com.backthree.cohobby.global.common.response.code.BaseCode;
+import com.backthree.cohobby.global.common.response.code.ReasonDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum ErrorStatus implements BaseErrorCode {
+public enum ErrorStatus implements BaseCode {
     // 기본 에러
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON500", "서버 에러, 관리자에게 문의 바랍니다."),
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON400", "잘못된 요청입니다."),
@@ -38,17 +38,13 @@ public enum ErrorStatus implements BaseErrorCode {
     private final String message;
 
     @Override
-    public ErrorReasonDTO getReason() {
-        return ErrorReasonDTO.builder().message(message).code(code).isSuccess(false).build();
-    }
-
-    @Override
-    public ErrorReasonDTO getReasonHttpStatus() {
-        return ErrorReasonDTO.builder()
-                .message(message)
-                .code(code)
+    public ReasonDTO getReason() { //getReason 메서드에 모든 정보 포함되도록 통일
+        return ReasonDTO.builder()
+                .httpStatus(this.httpStatus)
                 .isSuccess(false)
-                .httpStatus(httpStatus)
+                .code(this.code)
+                .message(this.message)
                 .build();
     }
+
 }

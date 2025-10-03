@@ -1,7 +1,7 @@
 package com.backthree.cohobby.global.common;
 
 import com.backthree.cohobby.global.common.response.code.BaseCode;
-import com.backthree.cohobby.global.common.response.code.ErrorReasonDTO;
+import com.backthree.cohobby.global.common.response.code.ReasonDTO;
 import com.backthree.cohobby.global.common.response.status.ErrorStatus;
 import com.backthree.cohobby.global.common.response.status.SuccessStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -16,8 +16,7 @@ import lombok.NoArgsConstructor;
 import java.util.Collections;
 
 @Getter
-@AllArgsConstructor(access= AccessLevel.PROTECTED)
-@NoArgsConstructor(access = AccessLevel.PROTECTED, force = true)
+@AllArgsConstructor(access= AccessLevel.PRIVATE) //이미 생성된 메서드만 사용하도록 함
 @JsonPropertyOrder({"isSuccess","code","message","result"})
 public class BaseResponse<T> {
 
@@ -33,30 +32,21 @@ public class BaseResponse<T> {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private T result;
 
-    public static <T> BaseResponse<T> onSuccess(SuccessStatus status, T data){
-        return new BaseResponse<>(true,status.getCode(), status.getMessage(), data);
-    }
-    public static <T> BaseResponse<T> of(BaseCode code, T result) {
-        return new BaseResponse<>(
-                true,
-                code.getReasonHttpStatus().getCode(),
-                code.getReasonHttpStatus().getMessage(),
-                result);
+    //성공 응답
+    //가장 일반적인 성공 케이스(200 OK)를 위한 메서드
+    public static <T> BaseResponse<T> onSuccess(T data){
+        ReasonDTO reason = SuccessStatus._OK.getReason();
+        return new BaseResponse<>(true, reason.getCode(), reason.getMessage(), data);
     }
 
-    public static <T> BaseResponse<T> onFailure(ErrorStatus errorCode, T data) {
-        return new BaseResponse<>(false, errorCode.getCode(), errorCode.getMessage(), data);
+    //201 CREATED 등 특정 성공 코드를 위한 메서드(of 메서드 대신 사용)
+    public static <T> BaseResponse<T> onSuccess(BaseCode code, T data){
+        ReasonDTO reason = code.getReason();
+        return new BaseResponse<>(true, reason.getCode(), reason.getMessage(), data);
     }
 
-    public static <T> BaseResponse<T> onFailure(ErrorStatus errorCode) {
-        return onFailure(errorCode, null);
-    }
-
-    public static <T> BaseResponse<T> onFailure(ErrorReasonDTO reason, T data) {
-        return new BaseResponse<>(false, reason.getCode(), reason.getMessage(), data);
-    }
-
-    public static BaseResponse<Object> onFailureWithEmptyList(ErrorStatus errorStatus) {
-        return new BaseResponse<>(false, errorStatus.getCode(), errorStatus.getMessage(), Collections.emptyList());
+    //실패 응답
+    public static <T> BaseResponse<T> onFailure(String code, String message, T data){
+        return new BaseResponse<>(false, code, message, data);
     }
 }
