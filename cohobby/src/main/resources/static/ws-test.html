@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <title>WS STOMP Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+<h3>STOMP 테스트</h3>
+<div>
+  <label>Room ID: <input id="roomId" value="1"/></label>
+  <button onclick="connect()">Connect</button>
+  <button onclick="disconnect()">Disconnect</button>
+  <button onclick="subscribeRoom()">Subscribe Room</button>
+</div>
+<div style="margin-top:8px;">
+  <input id="sender" placeholder="sender"/>
+  <input id="content" placeholder="message"/>
+  <button onclick="sendMessage()">Send (/pub)</button>
+</div>
+<pre id="log" style="border:1px solid #ccc;padding:8px;height:240px;overflow:auto;"></pre>
+
+<script>
+  let stompClient = null;
+
+  function log(msg) {
+    const el = document.getElementById('log');
+    el.textContent += msg + '\n';
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function connect() {
+    const socket = new SockJS('/ws-stomp');
+    stompClient = Stomp.over(socket);
+    stompClient.debug = null;
+    stompClient.connect({}, function () {
+      log('Connected');
+    }, function (err) {
+      log('Error: ' + err);
+    });
+  }
+
+  function disconnect() {
+    if (stompClient) stompClient.disconnect(() => log('Disconnected'));
+  }
+
+  function subscribeRoom() {
+    if (!stompClient || !stompClient.connected) return log('Not connected');
+    const roomId = document.getElementById('roomId').value;
+    stompClient.subscribe(`/sub/chatting/room/${roomId}`, function (frame) {
+      log('SUB msg: ' + frame.body);
+    });
+    log('Subscribed room ' + roomId);
+  }
+
+  function sendMessage() {
+    if (!stompClient || !stompClient.connected) return log('Not connected');
+    const roomId = Number(document.getElementById('roomId').value);
+    const sender = document.getElementById('sender').value || 'anon';
+    const content = document.getElementById('content').value || '';
+    const body = JSON.stringify({ roomId, sender, content });
+    stompClient.send('/pub/chatting/message', {}, body);
+    log('SEND: ' + body);
+  }
+</script>
+</body>
+</html>
+
