@@ -21,7 +21,7 @@ import java.util.Map;
         })
 public class SwaggerConfig {
     @Bean
-    public OpenAPI catchyApi() {
+    public OpenAPI cohobbyApi() {
         //에러 응답 DTO 스키마 추가 - 기존 SchemaCustomizer 대신 사용
         Schema<?> errorResponseSchema = new Schema<>()
                 .type("object")
