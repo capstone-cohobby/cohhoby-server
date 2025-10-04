@@ -47,3 +47,5 @@ out/
 ### 기타 ###
 /target/
 
+## 민감 정보 담긴 로컬 설정 파일
+application-local.yml

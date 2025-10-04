@@ -60,13 +60,14 @@ public class OperationErrorDocCustomizer {
 
                 // 스키마 + 예제 자동 생성
                 MediaType media = new MediaType()
-                        .schema(new Schema<>().$ref("#/components/schemas/ErrorResponseDto"));
+                        .schema(new Schema<>().$ref("#/components/schemas/ErrorResponse")); //스키마 참조 변경
 
                 for (ErrorStatus s : statuses) {
                     Map<String, Object> value = new LinkedHashMap<>();
                     value.put("isSuccess", false);
                     value.put("code", s.getCode());
                     value.put("message", s.getMessage());
+                    value.put("result", null);
 
                     Example ex = new Example();
                     ex.setSummary(s.name());   // 예제 이름: POST_NOT_FOUND 등
