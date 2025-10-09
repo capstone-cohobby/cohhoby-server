@@ -49,29 +49,23 @@ public class ChattingService {
 
     @Transactional
     public ChattingRoomDto createRoom(Long user1Id, Long user2Id) {
-        System.out.println("Creating room between users: " + user1Id + " and " + user2Id);
         User user1 = userRepository.findById(user1Id).orElseThrow();
         User user2 = userRepository.findById(user2Id).orElseThrow();
-        // 이미 존재하는 방이 있으면 반환
-        return chattingRoomRepository.findByUser1AndUser2(user1, user2)
-                .or(() -> chattingRoomRepository.findByUser1AndUser2(user2, user1))
-                .map(room -> ChattingRoomDto.builder()
-                        .id(room.getId())
-                        .user1Id(room.getUser1().getId())
-                        .user2Id(room.getUser2().getId())
-                        .build())
-                .orElseGet(() -> {
-                    ChattingRoom room = chattingRoomRepository.save(ChattingRoom.builder()
-                            .user1(user1)
-                            .user2(user2)
-                            .name(user1.getNickname() + " & " + user2.getNickname())
-                            .build());
-                    return ChattingRoomDto.builder()
-                            .id(room.getId())
-                            .user1Id(room.getUser1().getId())
-                            .user2Id(room.getUser2().getId())
-                            .name(room.getName())
-                            .build();
-                });
+
+        // 필요 시 중복 구분용 suffix 예: + " #" + System.currentTimeMillis()
+        String roomName = user1.getNickname() + " & " + user2.getNickname();
+
+        ChattingRoom room = chattingRoomRepository.save(ChattingRoom.builder()
+                .user1(user1)
+                .user2(user2)
+                .name(roomName)
+                .build());
+
+        return ChattingRoomDto.builder()
+                .id(room.getId())
+                .user1Id(room.getUser1().getId())
+                .user2Id(room.getUser2().getId())
+                .name(room.getName())
+                .build();
     }
 }
