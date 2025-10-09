@@ -79,18 +79,15 @@
         if(roomSub) roomSub.unsubscribe();
         if(readSub) readSub.unsubscribe();
 
-        // 메시지 구독
         roomSub = stompClient.subscribe(`/sub/chatting/room/${currentRoomId}`, frame=>{
             const msg = JSON.parse(frame.body);
             renderMessage(msg);
             lastMessageIdInRoom = Math.max(lastMessageIdInRoom, msg.id);
-            // 상대 메시지 받으면 즉시 읽음 전송
             if(msg.senderId !== currentUserId){
                 sendRead(msg.id);
             }
         });
 
-        // 읽음 구독
         readSub = stompClient.subscribe(`/sub/chatting/room/${currentRoomId}/read`, frame=>{
             const receipt = JSON.parse(frame.body);
             if(receipt.userId !== currentUserId){
@@ -99,7 +96,6 @@
             }
         });
 
-        // 기존 메시지 로드
         fetch(`/chatting/${currentRoomId}`)
             .then(r=>r.json())
             .then(arr=>{
@@ -108,10 +104,19 @@
                     renderMessage(m);
                     lastMessageIdInRoom = Math.max(lastMessageIdInRoom, m.id);
                 });
-                // 방 진입 시 내가 마지막까지 본 상태이므로 마지막 메시지 읽음 전송
                 if(lastMessageIdInRoom>0){
                     sendRead(lastMessageIdInRoom);
                 }
+            })
+            .then(()=>{
+                // 추가: 상대의 현재 읽음 포인터 초기화
+                return fetch(`/chatting/rooms/${currentRoomId}/read-status/${peerUserId}`)
+                    .then(r=>r.json())
+                    .then(receipt=>{
+                        lastReadOfPeer = receipt.lastReadMessageId || 0;
+                        updateMyMessageChecks();
+                    })
+                    .catch(()=>{ /* 조회 실패는 무시 */ });
             });
 
         inRoom = true;

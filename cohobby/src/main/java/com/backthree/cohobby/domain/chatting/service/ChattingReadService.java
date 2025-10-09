@@ -32,4 +32,15 @@ public class ChattingReadService {
 
         messagingTemplate.convertAndSend("/sub/chatting/room/" + roomId + "/read", payload);
     }
+
+    @Transactional(readOnly = true)
+    public ReadReceiptDto getReadStatus(Long roomId, Long userId) {
+        ChattingRoom room = roomRepo.findById(roomId).orElseThrow();
+        User user = userRepo.findById(userId).orElseThrow();
+        return ReadReceiptDto.builder()
+                .roomId(roomId)
+                .userId(userId)
+                .lastReadMessageId(room.getLastReadOf(user))
+                .build();
+    }
 }
