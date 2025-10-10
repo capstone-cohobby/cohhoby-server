@@ -49,6 +49,38 @@ public class Payment extends BaseTimeEntity {
     @JoinColumn(name = "rentId", nullable = false)
     private Rent rent;
 
+    @Setter
+    private String orderName; //결제의도 생성 api 응답 위해 추가
+
     @OneToMany(mappedBy = "payment")
     private List<Refund> refunds = new ArrayList<>();
+
+    // payment-refund 양방향 정의를 위해 추가
+    public void addRefund(Refund refund) {
+        this.refunds.add(refund);
+    }
+
+    // 결제 승인 완료 처리
+    public void confirmSuccess(String pgPaymentKey, LocalDateTime capturedAt, String provider) {
+        this.status = PaymentStatus.CAPTURED;
+        this.pgPaymentKey = pgPaymentKey;
+        this.amountCaptured = this.amountExpected;
+        this.capturedAt = capturedAt;
+        this.authorizedAt = capturedAt;
+        this.provider = provider;
+        this.failureCode = null;
+        this.failureMessage = null;
+    }
+
+    // 결제 실패 처리
+    public void confirmFailure(String failureCode, String failureMessage) {
+        this.status = PaymentStatus.FAILED;
+        this.failureCode = failureCode;
+        this.failureMessage = failureMessage;
+    }
+
+    // 환불로 상태 변경
+    public void toRefunded(){
+        this.status = PaymentStatus.REFUNDED;
+    }
 }
