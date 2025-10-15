@@ -1,26 +1,19 @@
 package com.backthree.cohobby.domain.post.controller;
 
-import com.backthree.cohobby.domain.post.dto.request.CreatePostRequest;
-import com.backthree.cohobby.domain.post.dto.response.CreatePostResponse;
+import com.backthree.cohobby.domain.post.dto.request.*;
+import com.backthree.cohobby.domain.post.dto.response.*;
 import com.backthree.cohobby.domain.post.service.PostService;
 import com.backthree.cohobby.global.common.BaseResponse;
-import com.backthree.cohobby.global.common.ErrorResponseDto;
+import com.backthree.cohobby.global.common.response.status.ErrorStatus;
 import com.backthree.cohobby.global.common.response.status.SuccessStatus;
+import com.backthree.cohobby.global.config.swagger.ErrorDocs;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name="Post", description = "게시물 관련 API")
 @RestController
@@ -32,18 +25,48 @@ public class PostController {
     @Operation(summary = "게시글 초안 생성", description = "물품 정보 입력을 시작할 때 게시글의 초기 DRAFT 상태를 생성합니다.")
     @ApiResponses({
             @ApiResponse(responseCode="201", description="게시물 생성 성공"),
-            @ApiResponse(responseCode = "404", description = "존재하지 않는 유저/취미 ID",content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     })
+    @ErrorDocs({ErrorStatus.USER_NOT_FOUND})
     @PostMapping()
-    public ResponseEntity<BaseResponse<CreatePostResponse>> createPost(
+    public BaseResponse<CreatePostResponse> createPost(
             @Valid @RequestBody CreatePostRequest request   // JSON 본문을 받기 위해 @RequestBody 사용, 유효성 검사를 위해 @Valid 추가
     ) {
         CreatePostResponse payload = postService.createPost(request);
-        BaseResponse<CreatePostResponse> body =
-                BaseResponse.onSuccess(SuccessStatus._CREATED, payload);
-        // HTTP 상태 201 Created 와 함께 응답 반환
-        return ResponseEntity.status(HttpStatus.CREATED).body(body);
+        return BaseResponse.onSuccess(SuccessStatus._CREATED, payload);
+
     }
+
+    @Operation(summary = "게시물 기본 상세 정보 수정", description = "대여 게시물 업로드 과정에서 구입 일시, 하자 사항, 주의 사항, 대여 가능 기간 입력 받기")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "입력된 게시물 기본 상세 정보 수정 완료"),
+    })
+    @ErrorDocs({ ErrorStatus.POST_NOT_FOUND, ErrorStatus.POST_AUTHOR_MISMATCH, ErrorStatus.POST_STATUS_CONFLICT })
+    @PatchMapping("/{postId}/details")
+    public BaseResponse<UpdateDetailResponse> updateDetailPost(
+            @PathVariable Long postId,
+            @Valid @RequestBody UpdateDetailRequest request
+    ){
+        UpdateDetailResponse payload = postService.updateDetailPost(postId,request);
+        return BaseResponse.onSuccess(SuccessStatus._OK, payload);
+
+    }
+
+    @Operation(summary = "게시물 가격 필드 정보 수정", description = "대여 게시물 업로드 과정에서 일일/주간 대여료, 보증금 추천 받고 설정")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "입력된 게시물 가격 정보 수정 완료")
+    })
+    @ErrorDocs({ ErrorStatus.POST_NOT_FOUND, ErrorStatus.POST_AUTHOR_MISMATCH, ErrorStatus.POST_STATUS_CONFLICT })
+    @PatchMapping("/{postId}/pricing")
+    public BaseResponse<UpdatePricingResponse> updatePricingPost(
+            @PathVariable Long postId,
+            @Valid @RequestBody UpdatePricingRequest request
+    ){
+        UpdatePricingResponse payload = postService.updatePricingPost(postId,request);
+        return BaseResponse.onSuccess(SuccessStatus._OK, payload);
+
+    }
+
+
 
 
 }
