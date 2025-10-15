@@ -15,6 +15,7 @@
         .other .bubble {background:#ffffff;border:1px solid #ddd;}
         .check {font-size:11px;color:#1e88e5;margin-left:4px;align-self:flex-end;}
         .meta {font-size:10px;color:#666;margin-top:2px;}
+        .time { font-size:11px; color:#666; margin-left:6px; align-self:flex-end; white-space:nowrap; }
         #presence {font-size:12px;color:#2a7;}
         .controls input {width:80px;}
     </style>
@@ -162,22 +163,54 @@
         document.getElementById('messages').innerHTML='';
     }
 
+    function formatTime(t){
+        function pad(n){ return ('0'+n).slice(-2); }
+        if(!t){
+            const d=new Date();
+            return pad(d.getHours())+':'+pad(d.getMinutes());
+        }
+        let d=null;
+        if(t instanceof Date){
+            d=t;
+        } else if(typeof t==='number'){
+            d=new Date(t);
+        } else if(typeof t==='string'){
+            const s=t.replace(' ', 'T');
+            const parsed=new Date(s);
+            if(!isNaN(parsed.getTime())) d=parsed;
+            else {
+                const m=s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+                if(m) return m[4]+':'+m[5];
+            }
+        }
+        if(!d || isNaN(d.getTime())) return '';
+        return pad(d.getHours())+':'+pad(d.getMinutes());
+    }
+
     function renderMessage(m){
         const wrap=document.createElement('div');
         const mine = m.senderId === currentUserId;
         wrap.className='msg '+(mine?'me':'other');
         wrap.dataset.id = m.id;
+
         const bubble=document.createElement('div');
         bubble.className='bubble';
         bubble.textContent = m.text;
-        // 체크 표시는 나중에 (상대 읽음 수신 시) 업데이트
-        const meta=document.createElement('div');
-        meta.className='meta';
-        meta.textContent = (mine?'나':'상대')+' #' + m.id;
+
+        // 추가: 버블 옆 시간
+        const timeEl=document.createElement('span');
+        timeEl.className='time';
+        timeEl.textContent = formatTime(m.time);
+
+
+
         wrap.appendChild(bubble);
-        wrap.appendChild(meta);
-        document.getElementById('messages').appendChild(wrap);
-        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+        wrap.appendChild(timeEl);   // 버블 오른쪽에 시간 배치
+
+        const container=document.getElementById('messages');
+        container.appendChild(wrap);
+        container.scrollTop = container.scrollHeight;
+
         updateMyMessageChecks();
     }
 
