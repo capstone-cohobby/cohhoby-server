@@ -47,10 +47,10 @@ public class ChattingStompController {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수신자"));
 
         // 참여자 검증
-        boolean senderInRoom = room.getUser1().getId().equals(sender.getId()) ||
-                room.getUser2().getId().equals(sender.getId());
-        boolean receiverInRoom = room.getUser1().getId().equals(receiver.getId()) ||
-                room.getUser2().getId().equals(receiver.getId());
+        boolean senderInRoom = room.getOwner().getId().equals(sender.getId()) ||
+                room.getBorrower().getId().equals(sender.getId());
+        boolean receiverInRoom = room.getOwner().getId().equals(receiver.getId()) ||
+                room.getBorrower().getId().equals(receiver.getId());
 
         if (!senderInRoom) {
             throw new IllegalArgumentException("채팅방에 속하지 않은 사용자");

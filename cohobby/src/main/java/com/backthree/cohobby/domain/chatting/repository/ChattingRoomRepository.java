@@ -8,6 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ChattingRoomRepository extends JpaRepository<ChattingRoom, Long> {
-    List<ChattingRoom> findByUser1OrUser2(User user1, User user2);
-    Optional<ChattingRoom> findByUser1AndUser2(User user1, User user2);
+    List<ChattingRoom> findByOwnerOrBorrower(User owner, User borrower);
+    Optional<ChattingRoom> findByOwnerAndBorrower(User owner, User borrower);
 }

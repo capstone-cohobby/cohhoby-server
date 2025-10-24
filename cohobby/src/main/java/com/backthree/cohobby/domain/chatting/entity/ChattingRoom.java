@@ -1,11 +1,14 @@
 package com.backthree.cohobby.domain.chatting.entity;
 
+import com.backthree.cohobby.domain.post.entity.Post;
 import com.backthree.cohobby.domain.user.entity.User;
+import com.backthree.cohobby.domain.rent.entity.Rent;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,28 +20,36 @@ public class ChattingRoom {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user1_id", nullable = false)
-    private User user1;
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user2_id", nullable = false)
-    private User user2;
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
-    @Column(name = "user1_last_read_message_id")
-    private Long user1LastReadMessageId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "borrower_id", nullable = false)
+    private User borrower;
 
-    @Column(name = "user2_last_read_message_id")
-    private Long user2LastReadMessageId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rent_id", nullable = false)
+    private Rent rent;
+
+    @Column(name = "owner_last_read_message_id")
+    private Long ownerLastReadMessageId;
+
+    @Column(name = "borrower_last_read_message_id")
+    private Long borrowerLastReadMessageId;
 
     public void updateLastRead(User user, Long messageId) {
         if (messageId == null) return;
-        if (user1.getId().equals(user.getId())) {
-            if (user1LastReadMessageId == null || messageId > user1LastReadMessageId) {
-                user1LastReadMessageId = messageId;
+        if (owner.getId().equals(user.getId())) {
+            if (ownerLastReadMessageId == null || messageId > ownerLastReadMessageId) {
+                ownerLastReadMessageId = messageId;
             }
-        } else if (user2.getId().equals(user.getId())) {
-            if (user2LastReadMessageId == null || messageId > user2LastReadMessageId) {
-                user2LastReadMessageId = messageId;
+        } else if (borrower.getId().equals(user.getId())) {
+            if (borrowerLastReadMessageId == null || messageId > borrowerLastReadMessageId) {
+                borrowerLastReadMessageId = messageId;
             }
         } else {
             throw new IllegalArgumentException("채팅방에 속하지 않은 사용자");
@@ -46,8 +57,8 @@ public class ChattingRoom {
     }
 
     public Long getLastReadOf(User user) {
-        if (user1.getId().equals(user.getId())) return user1LastReadMessageId;
-        if (user2.getId().equals(user.getId())) return user2LastReadMessageId;
+        if (owner.getId().equals(user.getId())) return ownerLastReadMessageId;
+        if (borrower.getId().equals(user.getId())) return borrowerLastReadMessageId;
         return null;
     }
 }

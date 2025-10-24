@@ -6,8 +6,13 @@ import com.backthree.cohobby.domain.chatting.entity.Chatting;
 import com.backthree.cohobby.domain.chatting.entity.ChattingRoom;
 import com.backthree.cohobby.domain.chatting.repository.ChattingRepository;
 import com.backthree.cohobby.domain.chatting.repository.ChattingRoomRepository;
+import com.backthree.cohobby.domain.post.repository.PostRepository;
+import com.backthree.cohobby.domain.post.entity.Post;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.repository.UserRepository;
+import com.backthree.cohobby.domain.rent.repository.RentRepository;
+import com.backthree.cohobby.domain.rent.entity.Rent;
+import com.backthree.cohobby.domain.rent.entity.RentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +25,9 @@ import java.util.stream.Collectors;
 public class ChattingService {
     private final ChattingRepository chattingRepository;
     private final ChattingRoomRepository chattingRoomRepository;
+    private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final RentRepository rentRepository;
 
     public List<ChattingDto> getChattingByRoomId(Long roomId) {
         return chattingRepository.findByRoomId(roomId).stream()
@@ -37,34 +44,52 @@ public class ChattingService {
 
     public List<ChattingRoomDto> getRoomsByUser(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
-        return chattingRoomRepository.findByUser1OrUser2(user, user).stream()
+        return chattingRoomRepository.findByOwnerOrBorrower(user, user).stream()
                 .map(room -> ChattingRoomDto.builder()
                         .id(room.getId())
-                        .user1Id(room.getUser1().getId())
-                        .user2Id(room.getUser2().getId())
+                        .postId(room.getPost().getId())
+                        .ownerId(room.getOwner().getId())
+                        .borrowerId(room.getBorrower().getId())
                         .name(room.getName())
                         .build())
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public ChattingRoomDto createRoom(Long user1Id, Long user2Id) {
-        User user1 = userRepository.findById(user1Id).orElseThrow();
-        User user2 = userRepository.findById(user2Id).orElseThrow();
+    public ChattingRoomDto createRoom(Long postId, Long borrowerId) {
 
+        User borrower = userRepository.findById(borrowerId).orElseThrow();
+        Post post = postRepository.findById(postId).orElseThrow();
+        //post에 있는 user 가져오기
+        User owner = post.getUser();
+        Long ownerId = owner.getId();
         // 필요 시 중복 구분용 suffix 예: + " #" + System.currentTimeMillis()
-        String roomName = user1.getNickname() + " & " + user2.getNickname();
+        String roomName = owner.getNickname() + " & " + borrower.getNickname();
 
         ChattingRoom room = chattingRoomRepository.save(ChattingRoom.builder()
-                .user1(user1)
-                .user2(user2)
+                .post(post)
+                .owner(owner)
+                .borrower(borrower)
                 .name(roomName)
                 .build());
 
+        //시작일, 반환일, 최종 가격, 통화 추후에 RentService에서 업데이트
+        //환불 정책은 기본값 있지만 RentService에서 업데이트 가능
+        Rent rent = rentRepository.save(Rent.builder()
+                .post(post)
+                .owner(owner)
+                .borrower(borrower)
+                .status(RentStatus.CREATED)
+                .build());
+
+        // 생성한 rent를 room에 설정하고 저장
+        room.setRent(rent);
+
         return ChattingRoomDto.builder()
                 .id(room.getId())
-                .user1Id(room.getUser1().getId())
-                .user2Id(room.getUser2().getId())
+                .postId(room.getPost().getId())
+                .ownerId(room.getOwner().getId())
+                .borrowerId(room.getBorrower().getId())
                 .name(room.getName())
                 .build();
     }

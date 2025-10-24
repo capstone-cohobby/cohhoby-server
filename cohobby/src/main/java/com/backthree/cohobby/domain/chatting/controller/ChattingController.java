@@ -3,10 +3,12 @@ package com.backthree.cohobby.domain.chatting.controller;
 import com.backthree.cohobby.domain.chatting.dto.ChattingDto;
 import com.backthree.cohobby.domain.chatting.dto.ChattingRoomDto;
 import com.backthree.cohobby.domain.chatting.service.ChattingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/chatting")
@@ -24,8 +26,12 @@ public class ChattingController {
         return chattingService.getRoomsByUser(userId);
     }
 
-    @PostMapping("/room")
-    public ChattingRoomDto createRoom(@RequestParam Long user1Id, @RequestParam Long user2Id) {
-        return chattingService.createRoom(user1Id, user2Id);
+
+    //request body로 수정
+    @PostMapping(value = "/room", consumes = "application/json")
+    public ChattingRoomDto createRoom(@RequestBody Map<String, Object> request) {
+        Long postId = Long.valueOf(request.get("postId").toString());
+        Long borrowerId = Long.valueOf(request.get("borrowerId").toString());
+        return chattingService.createRoom(postId, borrowerId);
     }
 }
