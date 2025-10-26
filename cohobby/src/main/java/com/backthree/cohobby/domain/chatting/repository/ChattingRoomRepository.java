@@ -2,6 +2,7 @@ package com.backthree.cohobby.domain.chatting.repository;
 
 import com.backthree.cohobby.domain.chatting.entity.ChattingRoom;
 import com.backthree.cohobby.domain.user.entity.User;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
