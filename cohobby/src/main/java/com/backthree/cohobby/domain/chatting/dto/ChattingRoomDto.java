@@ -9,7 +9,8 @@ import lombok.*;
 @Builder
 public class ChattingRoomDto {
     private Long id;
-    private Long user1Id;
-    private Long user2Id;
+    private Long postId;
+    private Long ownerId;
+    private Long borrowerId;
     private String name;
 }

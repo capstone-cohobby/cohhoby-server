@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
+    //id로 채팅방 찾는 메서드
+    Post findById(long id);
 }

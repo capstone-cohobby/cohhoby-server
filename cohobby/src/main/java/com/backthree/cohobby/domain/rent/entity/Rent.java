@@ -7,8 +7,8 @@ import com.backthree.cohobby.domain.rent.alert.entity.RentAlert;
 import com.backthree.cohobby.domain.report.entity.Report;
 import com.backthree.cohobby.domain.review.entity.Review;
 import com.backthree.cohobby.domain.user.entity.User;
+import com.backthree.cohobby.domain.chatting.entity.ChattingRoom;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -38,7 +38,6 @@ public class Rent extends BaseTimeEntity {
     @Column(length = 3)
     private String currency;
 
-    // JSON 미정 → String + columnDefinition
     @Column(columnDefinition = "json")
     private String cancelPolicy;
 
@@ -54,6 +53,11 @@ public class Rent extends BaseTimeEntity {
     @JoinColumn(name = "postId", nullable = false)
     private Post post;
 
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chattingRoomId", nullable = false)
+    private ChattingRoom chattingRoom;
+
     @OneToMany(mappedBy = "rent")
     private Set<Payment> payments = new LinkedHashSet<>();
 
@@ -66,4 +70,13 @@ public class Rent extends BaseTimeEntity {
     @OneToMany(mappedBy = "rent")
     private Set<Review> reviews = new LinkedHashSet<>();
 
+    // 변경 허용 메서드
+    public void updateDates(LocalDateTime startAt, LocalDateTime duedate) {
+        this.startAt = startAt;
+        this.duedate = duedate;
+    }
+
+    public void updateRule(String rule) {
+        this.rule = rule;
+    }
 }
