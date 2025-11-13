@@ -23,17 +23,23 @@ jobs:
           cache: 'gradle'
 
       - name: Grant permission
+        working-directory: ./cohobby
         run: chmod +x ./gradlew
 
       # 2. bootJar (또는 build -x test)로 .jar 파일 생성
       - name: Build with Gradle
+        working-directory: ./cohobby
         run: ./gradlew bootJar -x test --no-daemon
 
+      # --- [수정된 부분 1] ---
+      # 'name:'과 같은 레벨로 맞추고 'run:'을 한 칸 들여썼습니다.
       - name: Docker build and push
         run: |
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build --platform linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }} .
-          docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}
+          # 'run: |' 보다 두 칸 더 들여썼습니다.
+          docker login -u ${{ secrets.DOKCER_USERNAME }} -p ${{ secrets.DOKCER_PASSWORD }}
+          # 3. 빌드 경로를 '.'에서 './cohobby'로 수정
+          docker build --platform linux/amd64 -t ${{ secrets.DOKCER_USERNAME }}/${{ secrets.DOKCER_REPO }} ./cohobby
+          docker push ${{ secrets.DOKCER_USERNAME }}/${{ secrets.DOKCER_REPO }}
 
   deploy:
     needs: build
@@ -42,6 +48,8 @@ jobs:
     steps:
       - name: SSH into EC2 and Deploy
         uses: appleboy/ssh-action@master
+        # --- [수정된 부분 2] ---
+        # 'with:' 블록 내부의 들여쓰기를 맞췄습니다.
         with:
           host: ${{ secrets.EC2_HOST }}
           # 3. 'ubuntu'를 'ec2-user'로 변경
@@ -50,6 +58,7 @@ jobs:
           port: 22
           # 4. EC2에서 실행할 스크립트 변경
           script: |
+            # 'script: |' 보다 두 칸 더 들여썼습니다.
             # 프로젝트 폴더로 이동 (docker-compose.yml 파일이 있는 곳)
             cd ~/cohhoby-server/cohobby
             
@@ -57,10 +66,10 @@ jobs:
             git pull
             
             # EC2에서 Docker Hub 로그인
-            sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            sudo docker login -u ${{ secrets.DOKCER_USERNAME }} -p ${{ secrets.DOKCER_PASSWORD }}
             
             # 새 이미지를 받음
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}
+            sudo docker pull ${{ secrets.DOKCER_USERNAME }}/${{ secrets.DOKCER_REPO }}
             
             # docker-compose로 앱을 재시작 (새 이미지로 교체)
             sudo docker-compose up -d
