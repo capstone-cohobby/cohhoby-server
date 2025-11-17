@@ -14,15 +14,15 @@ public class UpdatePricingRequest {
     @NotNull()
     private Long userId;
 
-    @Schema(description = "일일 대여 가격", example = "5000원")
+    @Schema(description = "일일 대여 가격", example = "5000")
     @NotNull()
     private Integer dailyPrice;
 
-    @Schema(description = "주간 대여 가격", example = "5000원")
+    @Schema(description = "주간 대여 가격", example = "5000")
     @NotNull()
     private Integer weeklyPrice;
 
-    @Schema(description = "보증금", example = "10000원")
+    @Schema(description = "보증금", example = "10000")
     @Column private Integer deposit;
 
 }
