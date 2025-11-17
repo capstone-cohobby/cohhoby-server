@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8"/>
+    <title>WS STOMP Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body {font-family: Arial, sans-serif;}
+        #messages {border:1px solid #ccc;padding:8px;height:300px;overflow:auto;background:#fafafa;}
+        .msg {margin:4px 0;display:flex;max-width:70%;}
+        .me {margin-left:auto;justify-content:flex-end;}
+        .bubble {padding:6px 10px;border-radius:8px;position:relative;font-size:13px;white-space:pre-wrap;}
+        .me .bubble {background:#d1e8ff;}
+        .other .bubble {background:#ffffff;border:1px solid #ddd;}
+        .check {font-size:11px;color:#1e88e5;margin-left:4px;align-self:flex-end;}
+        .meta {font-size:10px;color:#666;margin-top:2px;}
+        .time { font-size:11px; color:#666; margin-left:6px; align-self:flex-end; white-space:nowrap; }
+        #presence {font-size:12px;color:#2a7;}
+        .controls input {width:80px;}
+    </style>
+</head>
+<body>
+<h3>STOMP 채팅 테스트</h3>
+<div>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+</div>
+<div class="controls" style="margin-top:6px;">
+    <label>Room:<input id="roomId" value="1"/></label>
+    <label>User:<input id="currentUserId" value="1"/></label>
+    <label>Peer(수신자):<input id="peerUserId" value="2"/></label>
+    <button onclick="enterRoom()">Enter Room</button>
+    <button onclick="exitRoom()">Exit Room</button>
+</div>
+<div style="margin-top:6px;">
+    <input id="text" placeholder="message" style="width:260px;"/>
+    <button onclick="sendMessage()">Send</button>
+</div>
+<div id="presence"></div>
+<div id="messages"></div>
+<pre id="log" style="border:1px solid #ccc;padding:6px;height:120px;overflow:auto;margin-top:8px;"></pre>
+
+<script>
+    let stompClient = null;
+    let roomSub = null;
+    let readSub = null;
+    let currentRoomId = null;
+    let currentUserId = null;
+    let peerUserId = null;
+    let lastReadOfPeer = 0; // 상대가 읽은 내 마지막 메시지 ID
+    let lastMessageIdInRoom = 0;
+    let inRoom = false;
+
+    function log(msg){
+        const el=document.getElementById('log');
+        el.textContent+=msg+'\n';
+        el.scrollTop=el.scrollHeight;
+    }
+
+    function connect(){
+        if(stompClient && stompClient.connected){ log('Already connected'); return; }
+        const socket=new SockJS('/ws-stomp');
+        stompClient=Stomp.over(socket);
+        stompClient.debug=null;
+        stompClient.connect({}, ()=>log('Connected'), err=>log('Error: '+err));
+    }
+
+    function disconnect(){
+        exitRoom(); // 안전
+        if(stompClient) stompClient.disconnect(()=>log('Disconnected'));
+        stompClient=null;
+    }
+
+    function enterRoom(){
+        if(!stompClient || !stompClient.connected) return log('Not connected');
+        currentRoomId = Number(document.getElementById('roomId').value);
+        currentUserId = Number(document.getElementById('currentUserId').value);
+        peerUserId = Number(document.getElementById('peerUserId').value);
+        if(roomSub) roomSub.unsubscribe();
+        if(readSub) readSub.unsubscribe();
+
+        roomSub = stompClient.subscribe(`/sub/chatting/room/${currentRoomId}`, frame=>{
+            const msg = JSON.parse(frame.body);
+            renderMessage(msg);
+            lastMessageIdInRoom = Math.max(lastMessageIdInRoom, msg.id);
+            if(msg.senderId !== currentUserId){
+                sendRead(msg.id);
+            }
+        });
+
+        readSub = stompClient.subscribe(`/sub/chatting/room/${currentRoomId}/read`, frame=>{
+            const receipt = JSON.parse(frame.body);
+            if(receipt.userId !== currentUserId){
+                lastReadOfPeer = receipt.lastReadMessageId || 0;
+                updateMyMessageChecks();
+            }
+        });
+
+        fetch(`/chatting/${currentRoomId}`)
+            .then(r=>r.json())
+            .then(arr=>{
+                clearMessages();
+                arr.forEach(m=>{
+                    renderMessage(m);
+                    lastMessageIdInRoom = Math.max(lastMessageIdInRoom, m.id);
+                });
+                if(lastMessageIdInRoom>0){
+                    sendRead(lastMessageIdInRoom);
+                }
+            })
+            .then(()=>{
+                // 추가: 상대의 현재 읽음 포인터 초기화
+                return fetch(`/chatting/rooms/${currentRoomId}/read-status/${peerUserId}`)
+                    .then(r=>r.json())
+                    .then(receipt=>{
+                        lastReadOfPeer = receipt.lastReadMessageId || 0;
+                        updateMyMessageChecks();
+                    })
+                    .catch(()=>{ /* 조회 실패는 무시 */ });
+            });
+
+        inRoom = true;
+        log('Entered room '+currentRoomId);
+    }
+
+    function exitRoom(){
+        if(roomSub){ roomSub.unsubscribe(); roomSub=null; }
+        if(readSub){ readSub.unsubscribe(); readSub=null; }
+        inRoom = false;
+        currentRoomId = null;
+        clearMessages();
+        lastReadOfPeer = 0;
+        lastMessageIdInRoom = 0;
+        log('Exited room');
+    }
+
+    function sendMessage(){
+        if(!inRoom) return log('Not in room');
+        const text = document.getElementById('text').value;
+        if(!text.trim()) return;
+        const body = {
+            roomId: currentRoomId,
+            senderId: currentUserId,
+            receiverId: peerUserId,
+            text: text
+        };
+        stompClient.send('/pub/chatting/send', {}, JSON.stringify(body));
+        document.getElementById('text').value='';
+    }
+
+    function sendRead(lastMessageId){
+        if(!inRoom) return;
+        const payload = {
+            roomId: currentRoomId,
+            userId: currentUserId,
+            lastMessageId: lastMessageId
+        };
+        stompClient.send('/pub/chatting/read', {}, JSON.stringify(payload));
+    }
+
+    function clearMessages(){
+        document.getElementById('messages').innerHTML='';
+    }
+
+    function formatTime(t){
+        function pad(n){ return ('0'+n).slice(-2); }
+        if(!t){
+            const d=new Date();
+            return pad(d.getHours())+':'+pad(d.getMinutes());
+        }
+        let d=null;
+        if(t instanceof Date){
+            d=t;
+        } else if(typeof t==='number'){
+            d=new Date(t);
+        } else if(typeof t==='string'){
+            const s=t.replace(' ', 'T');
+            const parsed=new Date(s);
+            if(!isNaN(parsed.getTime())) d=parsed;
+            else {
+                const m=s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+                if(m) return m[4]+':'+m[5];
+            }
+        }
+        if(!d || isNaN(d.getTime())) return '';
+        return pad(d.getHours())+':'+pad(d.getMinutes());
+    }
+
+    function renderMessage(m){
+        const wrap=document.createElement('div');
+        const mine = m.senderId === currentUserId;
+        wrap.className='msg '+(mine?'me':'other');
+        wrap.dataset.id = m.id;
+
+        const bubble=document.createElement('div');
+        bubble.className='bubble';
+        bubble.textContent = m.text;
+
+        // 추가: 버블 옆 시간
+        const timeEl=document.createElement('span');
+        timeEl.className='time';
+        timeEl.textContent = formatTime(m.time);
+
+
+
+        wrap.appendChild(bubble);
+        wrap.appendChild(timeEl);   // 버블 오른쪽에 시간 배치
+
+        const container=document.getElementById('messages');
+        container.appendChild(wrap);
+        container.scrollTop = container.scrollHeight;
+
+        updateMyMessageChecks();
+    }
+
+    function updateMyMessageChecks(){
+        const container=document.getElementById('messages');
+        [...container.querySelectorAll('.msg.me')].forEach(div=>{
+            const id=Number(div.dataset.id);
+            // 기존 체크 제거
+            let chk=div.querySelector('.check');
+            if(chk) chk.remove();
+            if(id <= lastReadOfPeer){
+                const c=document.createElement('span');
+                c.className='check';
+                c.textContent='✔';
+                div.appendChild(c);
+            }
+        });
+    }
+</script>
+</body>
+</html>
