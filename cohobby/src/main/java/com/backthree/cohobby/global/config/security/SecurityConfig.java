@@ -79,7 +79,10 @@ public class SecurityConfig {
             // Swagger UI 접근 시 인증 실패하면 OAuth2 로그인 페이지로 리다이렉트
             String requestPath = request.getRequestURI();
             if (requestPath != null && (requestPath.startsWith("/swagger-ui") || requestPath.startsWith("/v3/api-docs"))) {
-                response.sendRedirect("/oauth2/authorization/kakao");
+                // Swagger에서 온 경우 redirect_to 파라미터를 포함하여 리다이렉트
+                String redirectUrl = "/oauth2/authorization/kakao?redirect_to=" + 
+                    java.net.URLEncoder.encode("http://localhost:8080/swagger-ui.html", "UTF-8");
+                response.sendRedirect(redirectUrl);
             } else {
                 // 다른 경로는 401 응답
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

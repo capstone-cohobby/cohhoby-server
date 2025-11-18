@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -36,8 +37,26 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
             log.warn("카카오 API Rate Limit 초과 - 사용자에게 대기 안내");
         }
         
-        // 프론트엔드로 에러 정보 전달
-        response.sendRedirect("http://localhost:3000/login?error=" + java.net.URLEncoder.encode(userFriendlyMessage, "UTF-8"));
+        // 요청이 어디서 왔는지 확인 (Swagger인지 프론트엔드인지)
+        String referer = request.getHeader("Referer");
+        String redirectTo = request.getParameter("redirect_to");
+        String requestPath = request.getRequestURI();
+        
+        // Swagger에서 온 경우 또는 redirect_to가 Swagger인 경우
+        boolean isFromSwagger = (referer != null && referer.contains("swagger-ui")) ||
+                                (redirectTo != null && redirectTo.contains("swagger-ui")) ||
+                                (requestPath != null && requestPath.contains("swagger"));
+        
+        if (isFromSwagger) {
+            // Swagger로 리다이렉트 (에러 메시지 포함)
+            String swaggerUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/swagger-ui.html")
+                    .queryParam("error", userFriendlyMessage)
+                    .build().toUriString();
+            response.sendRedirect(swaggerUrl);
+        } else {
+            // 프론트엔드로 에러 정보 전달
+            response.sendRedirect("http://localhost:3000/login?error=" + java.net.URLEncoder.encode(userFriendlyMessage, "UTF-8"));
+        }
     }
 }
 

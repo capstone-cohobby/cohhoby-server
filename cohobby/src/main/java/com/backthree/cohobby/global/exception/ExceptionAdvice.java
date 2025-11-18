@@ -72,6 +72,23 @@ public class ExceptionAdvice extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(reason.getHttpStatus()).body(response);
     }
 
+    // 인증이 필요한데 인증되지 않은 경우 처리
+    @ExceptionHandler(value = IllegalStateException.class)
+    public ResponseEntity<BaseResponse<Object>> handleIllegalStateException(IllegalStateException e) {
+        // "로그인이 필요합니다!" 메시지인 경우 인증 에러로 처리
+        if (e.getMessage() != null && e.getMessage().contains("로그인이 필요합니다")) {
+            log.warn("인증되지 않은 사용자 접근: {}", e.getMessage());
+            ReasonDTO reason = ErrorStatus.UNAUTHORIZED.getReason();
+            BaseResponse<Object> response = BaseResponse.onFailure(reason.getCode(), "로그인이 필요합니다!", null);
+            return ResponseEntity.status(reason.getHttpStatus()).body(response);
+        }
+        // 다른 IllegalStateException은 일반 에러로 처리
+        log.error("IllegalStateException:", e);
+        ReasonDTO reason = ErrorStatus.BAD_REQUEST.getReason();
+        BaseResponse<Object> response = BaseResponse.onFailure(reason.getCode(), e.getMessage(), null);
+        return ResponseEntity.status(reason.getHttpStatus()).body(response);
+    }
+
     // 예상치 못한 모든 예외를 처리
     @ExceptionHandler(value = Exception.class)
     public ResponseEntity<BaseResponse<Object>> handleException(Exception e) {
