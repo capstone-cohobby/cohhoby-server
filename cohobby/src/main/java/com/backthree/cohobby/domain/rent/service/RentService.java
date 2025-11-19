@@ -17,9 +17,14 @@ public class RentService {
     private final RentRepository rentRepository;
 
     @Transactional
-    public UpdateDetailResponse updateDetail(Long roomId, UpdateDetailRequest request) {
+    public UpdateDetailResponse updateDetail(Long roomId, UpdateDetailRequest request, Long userId) {
         Rent rent = rentRepository.findByChattingRoomId(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("대여 정보를 찾을 수 없습니다. roomId=" + roomId));
+        
+        // 권한 검증: owner 또는 borrower만 수정 가능
+        if (!rent.getOwner().getId().equals(userId) && !rent.getBorrower().getId().equals(userId)) {
+            throw new IllegalArgumentException("대여 정보를 수정할 권한이 없습니다.");
+        }
 
         boolean hasStart = request.getStartAt() != null;
         boolean hasDue = request.getDuedate() != null;

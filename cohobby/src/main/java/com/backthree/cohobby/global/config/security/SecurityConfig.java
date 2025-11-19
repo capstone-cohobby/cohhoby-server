@@ -12,12 +12,15 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 
 @Configuration
@@ -29,6 +32,7 @@ public class SecurityConfig {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/", "/login", "/oauth2/**", "/favicon.ico", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/auth/token/refresh").permitAll() //토큰 갱신은 누구나 접근 가능해야 함
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated() // Swagger UI는 인증 필요
                         .requestMatchers("/auth/signup-extra").authenticated() //추가 정보 api는 인증 필요
                         .anyRequest().authenticated()
                 )
@@ -51,6 +56,10 @@ public class SecurityConfig {
                                 userInfo.userService(customOauth2UserService)
                         )
                         .successHandler(oAuth2LoginSuccessHandler())
+                        .failureHandler(oAuth2LoginFailureHandler)
+                )
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(authenticationEntryPoint())
                 )
                 //jwt 인증 필터를 oauth2 로그인 필터 실행 전에 배치
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -62,6 +71,25 @@ public class SecurityConfig {
     @Bean
     public AuthenticationSuccessHandler oAuth2LoginSuccessHandler() {
         return new OAuth2LoginSuccessHandler(jwtService, refreshTokenRepository, userRepository);
+    }
+
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return (request, response, authException) -> {
+            // Swagger UI 접근 시 인증 실패하면 OAuth2 로그인 페이지로 리다이렉트
+            String requestPath = request.getRequestURI();
+            if (requestPath != null && (requestPath.startsWith("/swagger-ui") || requestPath.startsWith("/v3/api-docs"))) {
+                // Swagger에서 온 경우 redirect_to 파라미터를 포함하여 리다이렉트
+                String redirectUrl = "/oauth2/authorization/kakao?redirect_to=" + 
+                    java.net.URLEncoder.encode("http://localhost:8080/swagger-ui.html", "UTF-8");
+                response.sendRedirect(redirectUrl);
+            } else {
+                // 다른 경로는 401 응답
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"error\":\"인증이 필요합니다.\",\"message\":\"" + authException.getMessage() + "\"}");
+            }
+        };
     }
 
     @Bean

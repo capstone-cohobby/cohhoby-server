@@ -10,8 +10,12 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
 springdoc:
   override-with-generic-response: true
-
+jwt:
+  secret: ${JWT_SECRET:change-me-32bytes-at-least}  # 최소 32바이트(HS256 기준)
+  access-expiration: 3600000
+  refresh-expiration: 1209600000
 
 

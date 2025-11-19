@@ -44,11 +44,32 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 );
 
         //JWT(tokenDTO의 토큰들) 담아서 메인페이지로 리다이렉트
+        // 요청이 어디서 왔는지 확인하여 적절한 곳으로 리다이렉트
         String targetUrl;
-        targetUrl = UriComponentsBuilder.fromUriString("http://localhost:3000")
-                .queryParam("accessToken", tokenDTO.getAccessToken())
-                .queryParam("refreshToken", tokenDTO.getRefreshToken())
-                .build().toUriString();
+        
+        // Referer 헤더나 쿼리 파라미터를 확인하여 리다이렉트 대상 결정
+        String referer = request.getHeader("Referer");
+        String redirectTo = request.getParameter("redirect_to");
+        
+        // redirect_to 파라미터가 있으면 그곳으로, 없으면 Referer 확인
+        if (redirectTo != null && !redirectTo.isEmpty()) {
+            targetUrl = UriComponentsBuilder.fromUriString(redirectTo)
+                    .queryParam("accessToken", tokenDTO.getAccessToken())
+                    .queryParam("refreshToken", tokenDTO.getRefreshToken())
+                    .build().toUriString();
+        } else if (referer != null && referer.contains("swagger-ui")) {
+            // Swagger에서 온 경우 Swagger로 리다이렉트
+            targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/swagger-ui.html")
+                    .queryParam("accessToken", tokenDTO.getAccessToken())
+                    .queryParam("refreshToken", tokenDTO.getRefreshToken())
+                    .build().toUriString();
+        } else {
+            // 기본값: Swagger로 리다이렉트 (개발 환경)
+            targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/swagger-ui.html")
+                    .queryParam("accessToken", tokenDTO.getAccessToken())
+                    .queryParam("refreshToken", tokenDTO.getRefreshToken())
+                    .build().toUriString();
+        }
 
         response.sendRedirect(targetUrl);
     }
