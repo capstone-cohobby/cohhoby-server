@@ -50,7 +50,7 @@ jobs:
           key: ${{ secrets.EC2_PEM_KEY }}
           port: 22
           script: |
-            cd ~/cohhoby-server/cohobby
+            cd ~/cohobby-server/cohobby
             git pull
             
             # --- [수정된 부분 2] ---
