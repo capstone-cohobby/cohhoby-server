@@ -25,11 +25,8 @@ public class PostService {
     private final UserService userService;
     private final HobbyService hobbyService;
 
-    private static final Long DUMMY_USER_ID = 1L;  //임시 유저
-
     @Transactional
-    public CreatePostResponse createPost(CreatePostRequest request){
-        Long userId = DUMMY_USER_ID;
+    public CreatePostResponse createPost(CreatePostRequest request, Long userId){
         Long hobbyId = request.getHobbyId();
 
         // ID를 기반으로 각 엔티티가 존재하는지 조회
@@ -42,7 +39,7 @@ public class PostService {
         }
 
         // 검증 후, 참조(프록시)만 가져와서 외래키 관계 설정
-        User userReference = userService.findUserReferenceById(DUMMY_USER_ID);
+        User userReference = userService.findUserReferenceById(userId);
         Hobby hobbyReference = hobbyService.findHobbyReferenceById(hobbyId);
 
         // Post 엔티티 생성
@@ -59,8 +56,8 @@ public class PostService {
     }
 
     @Transactional
-    public UpdateDetailResponse updateDetailPost(Long postId, UpdateDetailRequest request) {
-        if (!userService.existsById(request.getUserId())) {
+    public UpdateDetailResponse updateDetailPost(Long postId, UpdateDetailRequest request, Long userId) {
+        if (!userService.existsById(userId)) {
             throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
         }
 
@@ -68,11 +65,9 @@ public class PostService {
                 .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
 
         // 권한 및 상태 가드
-        /*
-        if (!Objects.equals(post.getUser(), request.getUserId())) {
+        if (!Objects.equals(post.getUser().getId(), userId)) {
             throw new GeneralException(ErrorStatus.POST_AUTHOR_MISMATCH);
         }
-        */
         if (post.getStatus() != PostStatus.DRAFT) {
             throw new GeneralException(ErrorStatus.POST_STATUS_CONFLICT);
         }
@@ -91,17 +86,16 @@ public class PostService {
         return UpdateDetailResponse.fromEntity(post);
     }
     @Transactional
-    public UpdatePricingResponse updatePricingPost(Long postId, UpdatePricingRequest request) {
-        if (!userService.existsById(request.getUserId())) {
+    public UpdatePricingResponse updatePricingPost(Long postId, UpdatePricingRequest request, Long userId) {
+        if (!userService.existsById(userId)) {
             throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
         }
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
         // 권한 및 상태 가드
-        /*if (!Objects.equals(post.getUser(), request.getUserId())) {
+        if (!Objects.equals(post.getUser().getId(), userId)) {
             throw new GeneralException(ErrorStatus.POST_AUTHOR_MISMATCH);
         }
-        */
         if (post.getStatus() != PostStatus.DRAFT) {
             throw new GeneralException(ErrorStatus.POST_STATUS_CONFLICT);
         }

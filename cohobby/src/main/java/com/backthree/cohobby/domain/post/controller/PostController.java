@@ -5,6 +5,8 @@ import com.backthree.cohobby.domain.post.dto.response.*;
 import com.backthree.cohobby.domain.post.entity.Post;
 import com.backthree.cohobby.domain.post.service.PostQueryService;
 import com.backthree.cohobby.domain.post.service.PostService;
+import com.backthree.cohobby.domain.user.entity.User;
+import com.backthree.cohobby.global.annotation.CurrentUser;
 import com.backthree.cohobby.global.common.BaseResponse;
 import com.backthree.cohobby.global.common.response.status.ErrorStatus;
 import com.backthree.cohobby.global.common.response.status.SuccessStatus;
@@ -33,9 +35,10 @@ public class PostController {
     @ErrorDocs({ErrorStatus.USER_NOT_FOUND})
     @PostMapping()
     public BaseResponse<CreatePostResponse> createPost(
-            @Valid @RequestBody CreatePostRequest request   // JSON 본문을 받기 위해 @RequestBody 사용, 유효성 검사를 위해 @Valid 추가
+            @Valid @RequestBody CreatePostRequest request,
+            @CurrentUser User user
     ) {
-        CreatePostResponse payload = postService.createPost(request);
+        CreatePostResponse payload = postService.createPost(request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._CREATED, payload);
 
     }
@@ -48,9 +51,10 @@ public class PostController {
     @PatchMapping("/{postId}/details")
     public BaseResponse<UpdateDetailResponse> updateDetailPost(
             @PathVariable Long postId,
-            @Valid @RequestBody UpdateDetailRequest request
+            @Valid @RequestBody UpdateDetailRequest request,
+            @CurrentUser User user
     ){
-        UpdateDetailResponse payload = postService.updateDetailPost(postId,request);
+        UpdateDetailResponse payload = postService.updateDetailPost(postId, request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
 
     }
@@ -63,9 +67,10 @@ public class PostController {
     @PatchMapping("/{postId}/pricing")
     public BaseResponse<UpdatePricingResponse> updatePricingPost(
             @PathVariable Long postId,
-            @Valid @RequestBody UpdatePricingRequest request
+            @Valid @RequestBody UpdatePricingRequest request,
+            @CurrentUser User user
     ){
-        UpdatePricingResponse payload = postService.updatePricingPost(postId,request);
+        UpdatePricingResponse payload = postService.updatePricingPost(postId, request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
 
     }

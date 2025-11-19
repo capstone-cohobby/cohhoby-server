@@ -1,0 +1,12 @@
+version: '3.9'
+services:
+  app:
+    # 이 이미지는 GitHub Actions에서 빌드 후 Docker Hub에 올릴 이름입니다.
+    image: "${DOCKER_USERNAME}/${DOCKER_REPO}:latest"
+    container_name: cohobby-server
+    ports:
+      - "8080:8080"
+    volumes:
+      # EC2의 비밀번호 파일을 Docker 컨테이너의 /config 폴더에 연결
+      # (Spring Boot는 /config/application-local.yml을 자동으로 찾아 읽음)
+      - ~/cohobby-server/cohobby/src/main/resources/application-local.yml:/config/application-local.yml
