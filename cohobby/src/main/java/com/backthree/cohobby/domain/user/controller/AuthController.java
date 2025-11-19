@@ -5,12 +5,12 @@ import com.backthree.cohobby.domain.user.dto.TokenRefreshRequestDTO;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.repository.RefreshTokenRepository;
 import com.backthree.cohobby.domain.user.repository.UserRepository;
+import com.backthree.cohobby.global.annotation.CurrentUser;
 import com.backthree.cohobby.global.config.security.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -36,7 +36,7 @@ public class AuthController {
     }*/
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@AuthenticationPrincipal User user) throws IOException {
+    public ResponseEntity<String> logout(@CurrentUser User user) throws IOException {
         refreshTokenRepository.findByUser(user)
                         .ifPresent(refreshTokenRepository::delete);
         return ResponseEntity.ok("로그아웃되었습니다.");

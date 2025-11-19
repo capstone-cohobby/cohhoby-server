@@ -38,10 +38,10 @@ public class User extends BaseTimeEntity implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    //@Column(nullable = false)
+    @Column(nullable = true)
     private Integer birthYear;
 
-    //@Column(nullable = false)
+    @Column(nullable = true)
     private LocalDate birthday;
 
     @Column(nullable = false)
