@@ -11,3 +11,5 @@ ENV COMMIT_SHA=$GIT_SHA
 RUN apk add --no-cache gcompat
 COPY --from=builder /app.jar /app.jar
 ENTRYPOINT ["java","-Dspring.profiles.active=local","-jar","/app.jar"]
+
+
