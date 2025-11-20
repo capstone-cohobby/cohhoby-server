@@ -41,24 +41,27 @@ jobs:
     steps:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
-        env:
-          IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}
-          SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_PEM_KEY }}
           script: |
-            set -e
+            set -euo pipefail
             cd ~/cohobby-server/cohobby
             git config core.filemode false || true
             git fetch origin main
             git reset --hard origin/main
-            echo "Pull image $IMAGE:$SHA"
+
+            DOCKER_IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ github.sha }}"
+            echo "Pull image $DOCKER_IMAGE"
+
             sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-            sudo docker pull $IMAGE:$SHA
-            sed -i 's#image:.*#image: '"$IMAGE:$SHA"'#' docker-compose.yml
-            sudo COMMIT_SHA=$SHA docker-compose up -d --force-recreate --pull always
+            sudo docker pull "$DOCKER_IMAGE"
+
+            # docker-compose.yml 의 image 라인을 현재 SHA 이미지로 교체
+            sed -i "s#^ *image:.*#    image: \"$DOCKER_IMAGE\"#" docker-compose.yml
+
+            sudo COMMIT_SHA=${{ github.sha }} docker-compose up -d --force-recreate --pull always
             sudo docker image prune -f
             sudo docker ps --filter "name=cohobby-server"
-            sudo docker inspect $IMAGE:$SHA | grep -i revision || true
+            sudo docker inspect "$DOCKER_IMAGE" | grep -i revision || true
