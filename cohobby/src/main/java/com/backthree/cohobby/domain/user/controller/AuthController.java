@@ -2,6 +2,7 @@ package com.backthree.cohobby.domain.user.controller;
 
 import com.backthree.cohobby.domain.user.dto.TokenDTO;
 import com.backthree.cohobby.domain.user.dto.TokenRefreshRequestDTO;
+import com.backthree.cohobby.domain.user.dto.UserResponseDTO;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.repository.RefreshTokenRepository;
 import com.backthree.cohobby.domain.user.repository.UserRepository;
@@ -35,6 +36,11 @@ public class AuthController {
         return ResponseEntity.ok("사용자 추가 정보가 성공적으로 업데이트되었습니다.");
     }*/
 
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> getCurrentUser(@CurrentUser User user) {
+        return ResponseEntity.ok(UserResponseDTO.from(user));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@CurrentUser User user) throws IOException {
         refreshTokenRepository.findByUser(user)
@@ -61,6 +67,12 @@ public class AuthController {
     @PostMapping("/kakao/unlink")
     public ResponseEntity<String> unlink(HttpServletRequest request, HttpServletResponse response) throws IOException {
         return ResponseEntity.ok().build();
+    }
+
+    //헬스체크
+    @GetMapping("/api/health")
+    public String health() {
+        return "OK - deploy test for pt #42";
     }
 
 }
