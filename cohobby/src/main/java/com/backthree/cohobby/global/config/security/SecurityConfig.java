@@ -46,7 +46,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/", "/login", "/oauth2/**", "/favicon.ico", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/auth/token/refresh").permitAll() //토큰 갱신은 누구나 접근 가능해야 함
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated() // Swagger UI는 인증 필요
+                        .requestMatchers("/swagger-ui/**", "/docs/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // Swagger UI는 인증 필요
                         .requestMatchers("/auth/signup-extra").authenticated() //추가 정보 api는 인증 필요
                         .anyRequest().authenticated()
                 )
@@ -78,10 +78,26 @@ public class SecurityConfig {
         return (request, response, authException) -> {
             // Swagger UI 접근 시 인증 실패하면 OAuth2 로그인 페이지로 리다이렉트
             String requestPath = request.getRequestURI();
-            if (requestPath != null && (requestPath.startsWith("/swagger-ui") || requestPath.startsWith("/v3/api-docs"))) {
-                // Swagger에서 온 경우 redirect_to 파라미터를 포함하여 리다이렉트
+            if (requestPath != null && (requestPath.startsWith("/swagger-ui") || 
+                    requestPath.startsWith("/docs/swagger-ui") || 
+                    requestPath.startsWith("/v3/api-docs"))) {
+                // 현재 요청의 호스트와 포트를 동적으로 가져와서 리다이렉트 URL 생성
+                String scheme = request.getScheme(); // http 또는 https
+                String serverName = request.getServerName(); // 호스트명 또는 IP
+                int serverPort = request.getServerPort(); // 포트 번호
+                
+                // 포트가 기본 포트(80, 443)가 아니면 포트 번호 포함
+                String baseUrl = (serverPort == 80 || serverPort == 443) 
+                    ? scheme + "://" + serverName 
+                    : scheme + "://" + serverName + ":" + serverPort;
+                
+                // Swagger 경로 결정 (요청 경로에 따라)
+                String swaggerPath = requestPath.startsWith("/docs/swagger-ui") 
+                    ? "/docs/swagger-ui/index.html" 
+                    : "/swagger-ui/index.html";
+                
                 String redirectUrl = "/oauth2/authorization/kakao?redirect_to=" + 
-                    java.net.URLEncoder.encode("http://localhost:8080/swagger-ui.html", "UTF-8");
+                    java.net.URLEncoder.encode(baseUrl + swaggerPath, "UTF-8");
                 response.sendRedirect(redirectUrl);
             } else {
                 // 다른 경로는 401 응답
