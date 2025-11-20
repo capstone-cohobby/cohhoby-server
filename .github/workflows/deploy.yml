@@ -1,7 +1,10 @@
 name: CI/CD with Docker & Github Action
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
+
 
 jobs:
   build:
