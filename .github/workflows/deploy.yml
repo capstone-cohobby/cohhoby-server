@@ -5,47 +5,63 @@ on:
   pull_request:
     branches: ["main", "dev"]
 
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Build Jar
+      - name: Grant permission
         working-directory: ./cohobby
-        run: ./gradlew clean bootJar -x test --no-daemon
+        run: chmod +x ./gradlew
 
-      - name: Docker build & push
-        env:
-          IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}
-          SHA: ${{ github.sha }}
+      - name: Build with Gradle
+        working-directory: ./cohobby
+        run: ./gradlew bootJar -x test --no-daemon
+
+      - name: Docker build and push
         run: |
+          # --- [수정된 부분 1] ---
+          # DOKCER -> DOCKER 로 C 추가
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build --platform linux/amd64 \
-            --build-arg GIT_SHA=$SHA \
-            -t $IMAGE:latest \
-            -t $IMAGE:$SHA \
-            ./cohobby
-          docker push $IMAGE:latest
-          docker push $IMAGE:$SHA
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }} ./cohobby
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}
 
   deploy:
     needs: build
+    name: Deploy to EC2
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to EC2
+      - name: SSH into EC2 and Deploy
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_PEM_KEY }}
+          port: 22
           script: |
+<<<<<<< HEAD
+            cd ~/cohhoby-server/cohobby
+            git pull
+            
+            # --- [수정된 부분 2] ---
+            # DOKCER -> DOCKER 로 C 추가
+            sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}
+            sudo docker-compose up -d
+            sudo docker image prune -f
+=======
             set -euo pipefail
             WORK_DIR="$HOME/cohobby-server/cohobby"
             cd "$WORK_DIR"
@@ -74,3 +90,4 @@ jobs:
             sudo docker image prune -f
             sudo docker ps --filter "name=cohobby-server"
             sudo docker inspect "$DOCKER_IMAGE" | grep -i revision || true
+>>>>>>> 7fd8c809c889b80f72d60591c3df101fe233719d

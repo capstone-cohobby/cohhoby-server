@@ -5,6 +5,7 @@ import com.backthree.cohobby.domain.chatting.dto.ChattingRoomDto;
 import com.backthree.cohobby.domain.chatting.service.ChattingService;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.global.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +34,7 @@ public class ChattingController {
     @PostMapping(value = "/room", consumes = "application/json")
     public ChattingRoomDto createRoom(
             @RequestBody Map<String, Object> request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ) {
         Long postId = Long.valueOf(request.get("postId").toString());
         Long borrowerId = user.getId(); // 현재 로그인한 사용자가 borrower
