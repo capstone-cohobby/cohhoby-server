@@ -24,7 +24,7 @@ public class AIEstimateService {
     private String aiApiUrl;
 
     @Transactional
-    public AiEstimateResponse aiEstimate(AiEstimateRequest request, Long postId, Long userId){
+    public AiEstimateResponse aiEstimate(AiEstimateRequest request, Long postId, Long userId) {
         AiEstimateRawResponse raw = restTemplate.postForObject(
                 aiApiUrl,
                 request,
@@ -35,46 +35,76 @@ public class AIEstimateService {
             throw new IllegalStateException("AI 서버 응답이 null입니다.");
         }
 
+        // 변수 초기화
         Integer low = null;
         Integer point = null;
         Integer high = null;
         Integer suggestedDeposit = null;
         String caution = null;
-        String reason = null;
+
+        // 💡 수정 포인트: 이유(reason)를 합치기 위한 StringBuilder 생성
+        StringBuilder fullReason = new StringBuilder();
+
         String decision = null;
         Double confidence = null;
 
-        if (raw.getPrice() != null && raw.getPrice().getPrice() != null) {
-            var p = raw.getPrice().getPrice();
-            low = p.getLow();
-            point = p.getPoint();
-            high = p.getHigh();
-        }
-
-        if (raw.getDeposit() != null) {
-            suggestedDeposit = raw.getDeposit().getDepositAmount();
-        }
-
-        if (raw.getRules() != null && raw.getRules().getRules() != null) {
-            caution = String.join("\n", raw.getRules().getRules());
-        }
-
+        // 1. 가격 정보 매핑
         if (raw.getPrice() != null) {
-            reason = raw.getPrice().getReasoning();
+            // (1) 가격 데이터 추출
+            if (raw.getPrice().getPrice() != null) {
+                var p = raw.getPrice().getPrice();
+                low = p.getLow();
+                point = p.getPoint();
+                high = p.getHigh();
+            }
+
+            // (2) 가격 이유 추가
+            if (raw.getPrice().getReasoning() != null) {
+                fullReason.append("[가격 사유]\n")
+                        .append(raw.getPrice().getReasoning())
+                        .append("\n\n");
+            }
+
+            // (3) 기타 정보
             decision = raw.getPrice().getDecision();
             confidence = raw.getPrice().getConfidence();
         }
 
+        // 2. 보증금 정보 매핑
+        if (raw.getDeposit() != null) {
+            suggestedDeposit = raw.getDeposit().getDepositAmount();
+
+            // (4) 보증금 이유 추가
+            if (raw.getDeposit().getReasoning() != null) {
+                fullReason.append("[보증금 사유]\n")
+                        .append(raw.getDeposit().getReasoning())
+                        .append("\n\n");
+            }
+        }
+
+        // 3. 규칙 정보 매핑
+        if (raw.getRules() != null) {
+            if (raw.getRules().getRules() != null) {
+                caution = String.join("\n", raw.getRules().getRules());
+            }
+
+            // (5) 규칙 이유 추가
+            if (raw.getRules().getReasoning() != null) {
+                fullReason.append("[규칙 사유]\n")
+                        .append(raw.getRules().getReasoning());
+            }
+        }
+
+        // 4. 결과 반환
         return AiEstimateResponse.builder()
                 .suggestedLowPrice(low)
                 .suggestedPointPrice(point)
                 .suggestedHighPrice(high)
                 .suggestedDeposit(suggestedDeposit)
                 .caution(caution)
-                .reason(reason)
+                .reason(fullReason.toString().trim()) // 💡 합쳐진 전체 이유를 반환
                 .decision(decision)
                 .confidence(confidence)
                 .build();
     }
-
 }

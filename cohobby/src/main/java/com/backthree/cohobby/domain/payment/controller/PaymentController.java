@@ -9,6 +9,7 @@ import com.backthree.cohobby.domain.payment.dto.response.PaymentConfirmResponse;
 import com.backthree.cohobby.domain.payment.service.PaymentService;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.global.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,7 @@ public class PaymentController {
     @PostMapping("/intents")
     public ResponseEntity<PaymentIntentResponse> createPaymentIntent(
             @RequestBody PaymentIntentRequest request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ){
         PaymentIntentResponse response = paymentService.createPaymentIntent(request, user);
         return ResponseEntity.ok(response);
@@ -70,7 +71,7 @@ public class PaymentController {
     @GetMapping("/{paymentId}")
     public ResponseEntity<PaymentDetailResponse> getPaymentDetail(
             @PathVariable Long paymentId,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ){
         PaymentDetailResponse response = paymentService.getPaymentDetail(paymentId, user);
         return ResponseEntity.ok(response);

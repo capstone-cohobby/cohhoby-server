@@ -84,6 +84,7 @@ public class ChattingService {
 
         // 생성한 rent를 room에 설정하고 저장
         room.setRent(rent);
+        chattingRoomRepository.save(room);
 
         return ChattingRoomDto.builder()
                 .id(room.getId())

@@ -13,6 +13,7 @@ import com.backthree.cohobby.global.common.response.status.ErrorStatus;
 import com.backthree.cohobby.global.common.response.status.SuccessStatus;
 import com.backthree.cohobby.global.config.swagger.ErrorDocs;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,7 +39,7 @@ public class PostController {
     @PostMapping()
     public BaseResponse<CreatePostResponse> createPost(
             @Valid @RequestBody CreatePostRequest request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ) {
         CreatePostResponse payload = postService.createPost(request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._CREATED, payload);
@@ -54,7 +55,7 @@ public class PostController {
     public BaseResponse<UpdateDetailResponse> updateDetailPost(
             @PathVariable Long postId,
             @Valid @RequestBody UpdateDetailRequest request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ){
         UpdateDetailResponse payload = postService.updateDetailPost(postId, request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
@@ -70,7 +71,7 @@ public class PostController {
     public BaseResponse<UpdatePricingResponse> updatePricingPost(
             @PathVariable Long postId,
             @Valid @RequestBody UpdatePricingRequest request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ){
         UpdatePricingResponse payload = postService.updatePricingPost(postId, request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
@@ -86,11 +87,15 @@ public class PostController {
         return result;
     }
 
+    @Operation(summary = "ai 호출", description = "ai 호출해서 추천 대여가, 보증금, 대여 규칙, reason, confidence 응답받기")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "ai api 응답 완료"),
+    })
     @PostMapping("/{postId}/ai-estimate")
     public BaseResponse<AiEstimateResponse> estimate (
             @PathVariable Long postId,
             @Valid @RequestBody AiEstimateRequest request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ) {
         AiEstimateResponse payload = aiService.aiEstimate(request,postId, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);

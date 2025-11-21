@@ -20,7 +20,7 @@ public class AiEstimateRawResponse {
         private String decision;      // "uncertain"
         private Double confidence;    // 0.3
         private String reasoning;     // 가격 관련 이유
-
+        @JsonProperty("price")
         private PriceDetail price;    // 중첩된 price 객체
     }
 
