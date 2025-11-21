@@ -3,6 +3,7 @@ package com.backthree.cohobby.domain.post.controller;
 import com.backthree.cohobby.domain.post.dto.request.*;
 import com.backthree.cohobby.domain.post.dto.response.*;
 import com.backthree.cohobby.domain.post.entity.Post;
+import com.backthree.cohobby.domain.post.service.AIEstimateService;
 import com.backthree.cohobby.domain.post.service.PostQueryService;
 import com.backthree.cohobby.domain.post.service.PostService;
 import com.backthree.cohobby.domain.user.entity.User;
@@ -28,6 +29,7 @@ import java.util.List;
 public class PostController {
     private final PostService postService;
     private final PostQueryService postQueryService;
+    private final AIEstimateService aiService;
     @Operation(summary = "게시글 초안 생성", description = "물품 정보 입력을 시작할 때 게시글의 초기 DRAFT 상태를 생성합니다.")
     @ApiResponses({
             @ApiResponse(responseCode="201", description="게시물 생성 성공"),
@@ -82,6 +84,16 @@ public class PostController {
     ){
         List<Post> result = postQueryService.getPosts(query, type);
         return result;
+    }
+
+    @PostMapping("/{postId}/ai-estimate")
+    public BaseResponse<AiEstimateResponse> estimate (
+            @PathVariable Long postId,
+            @Valid @RequestBody AiEstimateRequest request,
+            @CurrentUser User user
+    ) {
+        AiEstimateResponse payload = aiService.aiEstimate(request,postId, user.getId());
+        return BaseResponse.onSuccess(SuccessStatus._OK, payload);
     }
 
 
