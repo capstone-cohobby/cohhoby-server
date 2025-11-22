@@ -3,6 +3,7 @@ package com.backthree.cohobby.domain.post.controller;
 import com.backthree.cohobby.domain.post.dto.request.*;
 import com.backthree.cohobby.domain.post.dto.response.*;
 import com.backthree.cohobby.domain.post.entity.Post;
+import com.backthree.cohobby.domain.post.service.AIEstimateService;
 import com.backthree.cohobby.domain.post.service.PostQueryService;
 import com.backthree.cohobby.domain.post.service.PostService;
 import com.backthree.cohobby.domain.user.entity.User;
@@ -12,6 +13,7 @@ import com.backthree.cohobby.global.common.response.status.ErrorStatus;
 import com.backthree.cohobby.global.common.response.status.SuccessStatus;
 import com.backthree.cohobby.global.config.swagger.ErrorDocs;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +32,7 @@ import java.util.List;
 public class PostController {
     private final PostService postService;
     private final PostQueryService postQueryService;
+    private final AIEstimateService aiService;
     @Operation(summary = "게시글 초안 생성", description = "물품 정보 입력을 시작할 때 게시글의 초기 DRAFT 상태를 생성합니다.")
     @ApiResponses({
             @ApiResponse(responseCode="201", description="게시물 생성 성공"),
@@ -38,7 +41,7 @@ public class PostController {
     @PostMapping()
     public BaseResponse<CreatePostResponse> createPost(
             @Valid @RequestBody CreatePostRequest request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ) {
         CreatePostResponse payload = postService.createPost(request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._CREATED, payload);
@@ -54,7 +57,7 @@ public class PostController {
     public BaseResponse<UpdateDetailResponse> updateDetailPost(
             @PathVariable Long postId,
             @Valid @RequestBody UpdateDetailRequest request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ){
         UpdateDetailResponse payload = postService.updateDetailPost(postId, request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
@@ -70,7 +73,7 @@ public class PostController {
     public BaseResponse<UpdatePricingResponse> updatePricingPost(
             @PathVariable Long postId,
             @Valid @RequestBody UpdatePricingRequest request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ){
         UpdatePricingResponse payload = postService.updatePricingPost(postId, request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
@@ -103,6 +106,20 @@ public class PostController {
 
     }
 
+
+    @Operation(summary = "ai 호출", description = "ai 호출해서 추천 대여가, 보증금, 대여 규칙, reason, confidence 응답받기")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "ai api 응답 완료"),
+    })
+    @PostMapping("/{postId}/ai-estimate")
+    public BaseResponse<AiEstimateResponse> estimate (
+            @PathVariable Long postId,
+            @Valid @RequestBody AiEstimateRequest request,
+            @Parameter(hidden = true) @CurrentUser User user
+    ) {
+        AiEstimateResponse payload = aiService.aiEstimate(request,postId, user.getId());
+        return BaseResponse.onSuccess(SuccessStatus._OK, payload);
+    }
 
 
 }

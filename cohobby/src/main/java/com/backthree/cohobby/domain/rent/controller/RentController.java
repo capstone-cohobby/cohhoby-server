@@ -10,6 +10,7 @@ import com.backthree.cohobby.global.common.response.status.ErrorStatus;
 import com.backthree.cohobby.global.common.response.status.SuccessStatus;
 import com.backthree.cohobby.global.config.swagger.ErrorDocs;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,7 +38,7 @@ public class RentController {
     public BaseResponse<UpdateDetailResponse> updateDetail(
             @PathVariable Long roomId,
             @Valid @RequestBody UpdateDetailRequest request,
-            @CurrentUser User user
+            @Parameter(hidden = true) @CurrentUser User user
     ) {
         UpdateDetailResponse payload = rentService.updateDetail(roomId, request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
