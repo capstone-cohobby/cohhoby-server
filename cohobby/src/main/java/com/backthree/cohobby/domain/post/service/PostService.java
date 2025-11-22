@@ -3,19 +3,28 @@ package com.backthree.cohobby.domain.post.service;
 import com.backthree.cohobby.domain.hobby.entity.Hobby;
 import com.backthree.cohobby.domain.post.dto.request.*;
 import com.backthree.cohobby.domain.post.dto.response.*;
+import com.backthree.cohobby.domain.post.entity.Image;
 import com.backthree.cohobby.domain.post.entity.Post;
 import com.backthree.cohobby.domain.post.entity.PostStatus;
+import com.backthree.cohobby.domain.post.repository.ImageRepository;
 import com.backthree.cohobby.domain.post.repository.PostRepository;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.service.UserService;
 import com.backthree.cohobby.domain.hobby.service.HobbyService;
 import com.backthree.cohobby.global.exception.GeneralException;
+import io.awspring.cloud.s3.ObjectMetadata;
+import io.awspring.cloud.s3.S3Resource;
+import io.awspring.cloud.s3.S3Template;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.backthree.cohobby.global.common.response.status.ErrorStatus;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Objects;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +33,11 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserService userService;
     private final HobbyService hobbyService;
+    private final S3Template s3Template;
+    private final ImageRepository imageRepository;
+
+    @Value("${spring.cloud.aws.s3.bucket}")
+    private String bucket;
 
     @Transactional
     public CreatePostResponse createPost(CreatePostRequest request, Long userId){
@@ -106,5 +120,93 @@ public class PostService {
 
         postRepository.save(post);
         return UpdatePricingResponse.fromEntity(post);
+    }
+
+    // 이미지 업로드
+    // 1) 단일 파일 업로드
+    public String uploadSingleImage(MultipartFile file){
+        // 입력값 없으면 null 반환
+        if (file == null || file.isEmpty()){
+            return null;
+        }
+
+        //파일 형식 검사
+        String contentType = file.getContentType();
+        if(contentType == null || !contentType.startsWith("image/")){
+            throw new GeneralException(ErrorStatus.NOT_IMAGE_FILE);
+        }
+
+        try(InputStream inputStream = file.getInputStream()){
+            //파일 이름 중복 방지(UUID 사용)
+            String originalFileName = file.getOriginalFilename();
+            String extension = getExtension(originalFileName);
+            String uuidFileName = UUID.randomUUID().toString() + extension;
+
+            //메타데이터 설정
+            ObjectMetadata metadata = ObjectMetadata.builder()
+                    .contentType(contentType)
+                    .build();
+
+            // upload의 리턴값 받아서 s3에 업로드
+            S3Resource resource = s3Template.upload(bucket, uuidFileName, inputStream, metadata);
+            return resource.getURL().toString();
+        } catch(IOException e){
+            throw new GeneralException(ErrorStatus.S3_UPLOAD_FAIL);
+        } catch(Exception e){
+            throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // 2) 다중 파일 업로드
+    @Transactional
+    public UpdateImageResponse updateS3Images(Long postId, UpdateImageRequest request, Long userId) {
+        //유저 및 게시글 검증
+        if(!userService.existsById(userId)){
+            throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
+        }
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
+        if (!Objects.equals(post.getUser().getId(), userId)) {
+            throw new GeneralException(ErrorStatus.POST_AUTHOR_MISMATCH);
+        }
+        if (post.getStatus() != PostStatus.DRAFT) {
+            throw new GeneralException(ErrorStatus.POST_STATUS_CONFLICT);
+        }
+
+        // 올린 이미지 하나도 없으면 빈 리스트 반환
+        List<MultipartFile> files = request.getImages();
+        if(files == null || files.isEmpty()){
+            return UpdateImageResponse.from(Collections.emptyList());
+        }
+
+        // 이미지 파일별로 업로드 & 저장
+        List<String> uploadedUrls = new ArrayList<>();
+        for(MultipartFile file : files){
+            String imageUrl = uploadSingleImage(file);
+            if(imageUrl != null){
+                uploadedUrls.add(imageUrl);
+            }
+            // DB에 저장
+            Image postImage = Image.builder()
+                    .post(post)
+                    .imageUrl(imageUrl)
+                    .build();
+            imageRepository.save(postImage);
+        }
+
+        return UpdateImageResponse.from(uploadedUrls);
+    }
+
+    // 확장자 추출 메서드
+    private String getExtension(String fileName) {
+        if(fileName == null){
+            throw new GeneralException(ErrorStatus.INVALID_FILE_EXTENSION);
+        }
+
+        try{
+            return fileName.substring(fileName.lastIndexOf("."));
+        } catch(StringIndexOutOfBoundsException e){
+            throw new GeneralException(ErrorStatus.INVALID_FILE_EXTENSION);
+        }
     }
 }
