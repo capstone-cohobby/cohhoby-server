@@ -48,7 +48,7 @@ public class PostController {
 
     }
 
-    @Operation(summary = "게시물 기본 상세 정보 수정", description = "대여 게시물 업로드 과정에서 구입 일시, 하자 사항, 주의 사항, 대여 가능 기간 입력 받기")
+    @Operation(summary = "게시물 기본 상세 정보 수정", description = "대여 게시물 업로드 과정에서 구입 일시, 하자 사항, 대여 가능 기간 입력 받기")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "입력된 게시물 기본 상세 정보 수정 완료"),
     })
@@ -64,7 +64,7 @@ public class PostController {
 
     }
 
-    @Operation(summary = "게시물 가격 필드 정보 수정", description = "대여 게시물 업로드 과정에서 일일/주간 대여료, 보증금 추천 받고 설정")
+    @Operation(summary = "게시물 가격 필드 정보 수정 & PUBLISHED 전환", description = "대여 게시물 업로드 과정에서 일일 대여료, 보증금를 저장하고 PUBLISHED로 전환합니다")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "입력된 게시물 가격 정보 수정 완료")
     })
@@ -78,15 +78,6 @@ public class PostController {
         UpdatePricingResponse payload = postService.updatePricingPost(postId, request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
 
-    }
-
-    @GetMapping("")
-    public List<Post> getPosts(
-            @RequestParam String query,
-            @RequestParam String type
-    ){
-        List<Post> result = postQueryService.getPosts(query, type);
-        return result;
     }
 
     // 게시물 이미지 업로드
@@ -106,7 +97,6 @@ public class PostController {
 
     }
 
-
     @Operation(summary = "ai 호출", description = "ai 호출해서 추천 대여가, 보증금, 대여 규칙, reason, confidence 응답받기")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "ai api 응답 완료"),
@@ -120,6 +110,7 @@ public class PostController {
         AiEstimateResponse payload = aiService.aiEstimate(request,postId, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
     }
+
 
 
 }

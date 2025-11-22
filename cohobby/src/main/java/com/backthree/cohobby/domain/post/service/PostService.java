@@ -54,7 +54,7 @@ public class PostService {
 
         // 검증 후, 참조(프록시)만 가져와서 외래키 관계 설정
         User userReference = userService.findUserReferenceById(userId);
-        Hobby hobbyReference = hobbyService.findHobbyReferenceById(hobbyId);
+        Hobby hobbyReference = hobbyService.findHobbyById(hobbyId);
 
         // Post 엔티티 생성
         Post newPost = Post.builder()
@@ -71,10 +71,6 @@ public class PostService {
 
     @Transactional
     public UpdateDetailResponse updateDetailPost(Long postId, UpdateDetailRequest request, Long userId) {
-        if (!userService.existsById(userId)) {
-            throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
-        }
-
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
 
@@ -91,7 +87,6 @@ public class PostService {
         if (request.getAvailableFrom() != null)    post.setAvailableFrom(request.getAvailableFrom());
         if (request.getAvailableUntil() != null)   post.setAvailableUntil(request.getAvailableUntil());
         if (request.getDefectStatus() != null)     post.setDefectStatus(request.getDefectStatus());
-        if (request.getCaution() != null)          post.setCaution(request.getCaution());
 
         // 도메인 불변식(기간/구입일 등) 검증 - 엔티티 메서드가 있다면 그걸 호출
         post.validatePeriod();
@@ -101,9 +96,6 @@ public class PostService {
     }
     @Transactional
     public UpdatePricingResponse updatePricingPost(Long postId, UpdatePricingRequest request, Long userId) {
-        if (!userService.existsById(userId)) {
-            throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
-        }
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
         // 권한 및 상태 가드
@@ -115,10 +107,11 @@ public class PostService {
         }
         // 부분 업데이트 (null 무시)
         if (request.getDailyPrice() != null)      post.setDailyPrice(request.getDailyPrice());
-        if (request.getWeeklyPrice() != null)      post.setWeeklyPrice(request.getWeeklyPrice());
         if (request.getDeposit() != null)      post.setDeposit(request.getDeposit());
-
+        if(request.getCaution() != null)       post.setCaution(request.getCaution());
+        post.setStatus(PostStatus.PUBLISHED);
         postRepository.save(post);
+
         return UpdatePricingResponse.fromEntity(post);
     }
 

@@ -7,6 +7,8 @@ import com.backthree.cohobby.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class HobbyService {
@@ -22,7 +24,6 @@ public class HobbyService {
         return hobbyRepository.existsById(hobbyId);
     }
 
-    public Hobby findHobbyReferenceById(Long hobbyId) {
-        return hobbyRepository.getReferenceById(hobbyId);
-    }
+
+
 }
