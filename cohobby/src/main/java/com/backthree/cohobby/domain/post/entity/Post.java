@@ -33,7 +33,6 @@ public class Post extends BaseTimeEntity {
     private String caution;
 
     @Column private Integer dailyPrice;
-    @Column private Integer weeklyPrice;
     @Column private Integer deposit;
 
     @Column(name = "image_url", length = 255)

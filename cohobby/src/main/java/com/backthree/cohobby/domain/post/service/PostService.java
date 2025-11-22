@@ -25,11 +25,8 @@ public class PostService {
     private final UserService userService;
     private final HobbyService hobbyService;
 
-    private static final Long DUMMY_USER_ID = 1L;  //임시 유저
-
     @Transactional
-    public CreatePostResponse createPost(CreatePostRequest request){
-        Long userId = DUMMY_USER_ID;
+    public CreatePostResponse createPost(CreatePostRequest request, Long userId){
         Long hobbyId = request.getHobbyId();
 
         // ID를 기반으로 각 엔티티가 존재하는지 조회
@@ -42,8 +39,8 @@ public class PostService {
         }
 
         // 검증 후, 참조(프록시)만 가져와서 외래키 관계 설정
-        User userReference = userService.findUserReferenceById(DUMMY_USER_ID);
-        Hobby hobbyReference = hobbyService.findHobbyReferenceById(hobbyId);
+        User userReference = userService.findUserReferenceById(userId);
+        Hobby hobbyReference = hobbyService.findHobbyById(hobbyId);
 
         // Post 엔티티 생성
         Post newPost = Post.builder()
@@ -59,20 +56,14 @@ public class PostService {
     }
 
     @Transactional
-    public UpdateDetailResponse updateDetailPost(Long postId, UpdateDetailRequest request) {
-        if (!userService.existsById(request.getUserId())) {
-            throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
-        }
-
+    public UpdateDetailResponse updateDetailPost(Long postId, UpdateDetailRequest request, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
 
         // 권한 및 상태 가드
-        /*
-        if (!Objects.equals(post.getUser(), request.getUserId())) {
+        if (!Objects.equals(post.getUser().getId(), userId)) {
             throw new GeneralException(ErrorStatus.POST_AUTHOR_MISMATCH);
         }
-        */
         if (post.getStatus() != PostStatus.DRAFT) {
             throw new GeneralException(ErrorStatus.POST_STATUS_CONFLICT);
         }
@@ -82,7 +73,6 @@ public class PostService {
         if (request.getAvailableFrom() != null)    post.setAvailableFrom(request.getAvailableFrom());
         if (request.getAvailableUntil() != null)   post.setAvailableUntil(request.getAvailableUntil());
         if (request.getDefectStatus() != null)     post.setDefectStatus(request.getDefectStatus());
-        if (request.getCaution() != null)          post.setCaution(request.getCaution());
 
         // 도메인 불변식(기간/구입일 등) 검증 - 엔티티 메서드가 있다면 그걸 호출
         post.validatePeriod();
@@ -91,26 +81,24 @@ public class PostService {
         return UpdateDetailResponse.fromEntity(post);
     }
     @Transactional
-    public UpdatePricingResponse updatePricingPost(Long postId, UpdatePricingRequest request) {
-        if (!userService.existsById(request.getUserId())) {
-            throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
-        }
+    public UpdatePricingResponse updatePricingPost(Long postId, UpdatePricingRequest request, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
         // 권한 및 상태 가드
-        /*if (!Objects.equals(post.getUser(), request.getUserId())) {
+        if (!Objects.equals(post.getUser().getId(), userId)) {
             throw new GeneralException(ErrorStatus.POST_AUTHOR_MISMATCH);
         }
-        */
         if (post.getStatus() != PostStatus.DRAFT) {
             throw new GeneralException(ErrorStatus.POST_STATUS_CONFLICT);
         }
         // 부분 업데이트 (null 무시)
         if (request.getDailyPrice() != null)      post.setDailyPrice(request.getDailyPrice());
-        if (request.getWeeklyPrice() != null)      post.setWeeklyPrice(request.getWeeklyPrice());
         if (request.getDeposit() != null)      post.setDeposit(request.getDeposit());
-
+        if(request.getCaution() != null)       post.setCaution(request.getCaution());
+        post.setStatus(PostStatus.PUBLISHED);
         postRepository.save(post);
+
         return UpdatePricingResponse.fromEntity(post);
     }
+
 }

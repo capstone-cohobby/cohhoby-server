@@ -8,6 +8,8 @@ import com.backthree.cohobby.domain.payment.dto.response.PaymentIntentResponse;
 import com.backthree.cohobby.domain.payment.dto.response.PaymentConfirmResponse;
 import com.backthree.cohobby.domain.payment.service.PaymentService;
 import com.backthree.cohobby.domain.user.entity.User;
+import com.backthree.cohobby.global.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,7 +27,7 @@ public class PaymentController {
     @PostMapping("/intents")
     public ResponseEntity<PaymentIntentResponse> createPaymentIntent(
             @RequestBody PaymentIntentRequest request,
-            User user //수정사항: 사용자 인증 로직 필요
+            @Parameter(hidden = true) @CurrentUser User user
     ){
         PaymentIntentResponse response = paymentService.createPaymentIntent(request, user);
         return ResponseEntity.ok(response);
@@ -67,15 +69,11 @@ public class PaymentController {
 
     //개별 결제 조회
     @GetMapping("/{paymentId}")
-    public ResponseEntity PaymentDetailResponse(
+    public ResponseEntity<PaymentDetailResponse> getPaymentDetail(
             @PathVariable Long paymentId,
-            @RequestBody User user //사용자 검증 로직
+            @Parameter(hidden = true) @CurrentUser User user
     ){
-        //1. 유저 검증
-
-        //2. 결제 정보 빈환
         PaymentDetailResponse response = paymentService.getPaymentDetail(paymentId, user);
         return ResponseEntity.ok(response);
-
     }
 }

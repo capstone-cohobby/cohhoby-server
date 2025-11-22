@@ -10,8 +10,19 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
 springdoc:
   override-with-generic-response: true
+jwt:
+  secret: ${JWT_SECRET:change-me-32bytes-at-least}  # 최소 32바이트(HS256 기준)
+  access-expiration: 3600000
+  refresh-expiration: 1209600000
 
 
-
+logging:
+  level:
+    root: INFO
+    # 보안 관련 로그를 상세하게 봅니다.
+    org.springframework.security: DEBUG
+    # JWT 관련 로직이 있는 패키지 경로 (본인 패키지명에 맞게 수정)
+    com.backthree.cohobby.config.security: DEBUG

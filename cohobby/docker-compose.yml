@@ -9,4 +9,4 @@ services:
     volumes:
       # EC2의 비밀번호 파일을 Docker 컨테이너의 /config 폴더에 연결
       # (Spring Boot는 /config/application-local.yml을 자동으로 찾아 읽음)
-      - ~/cohhoby-server/cohobby/src/main/resources/application-local.yml:/config/application-local.yml
+      - /home/ec2-user/cohobby-server/cohobby/src/main/resources/application-local.yml:/config/application-local.yml

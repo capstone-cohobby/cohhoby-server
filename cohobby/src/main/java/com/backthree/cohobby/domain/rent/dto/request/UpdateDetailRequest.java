@@ -11,10 +11,6 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class UpdateDetailRequest {
-    @Schema(description = "현재 사용자의 ID", example = "1")
-    @NotNull(message = "사용자 ID는 필수입니다.")
-    private Long userId;
-
     @Schema(description = "대여 시작 날짜", example = "2024-10-02")
     private LocalDate startAt;
 

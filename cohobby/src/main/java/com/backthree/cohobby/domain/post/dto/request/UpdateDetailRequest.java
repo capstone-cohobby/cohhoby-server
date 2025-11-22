@@ -1,8 +1,6 @@
 package com.backthree.cohobby.domain.post.dto.request;
 
-import com.backthree.cohobby.domain.post.entity.PostStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,11 +9,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class UpdateDetailRequest {
-    @Schema(description = "현재 사용자의 ID", example = "1")
-    @NotNull(message = "사용자 ID는 필수입니다.")
-    private Long userId;
-
-    @Schema(description = "물품에 대한 상세 설명", example = "2024년 10월에 구매한 최신형 모델입니다. 실사용 5회 미만으로 상태 좋습니다.")
+    @Schema(description = "물품에 대한 하자 사항(상태)", example = "2024년 10월에 구매한 최신형 모델입니다. 실사용 5회 미만으로 상태 좋습니다.")
     private String defectStatus;
 
     @Schema(description = "물품 구매일", example = "2024-10-02")
@@ -26,8 +20,5 @@ public class UpdateDetailRequest {
 
     @Schema(description = "대여 가능 종료일", example = "2025-12-31")
     private LocalDate availableUntil;
-
-    @Schema(description = "주의 사항", example = "신발 밑창이 떨어지지 않게 해주세요")
-    private String caution;
 
 }

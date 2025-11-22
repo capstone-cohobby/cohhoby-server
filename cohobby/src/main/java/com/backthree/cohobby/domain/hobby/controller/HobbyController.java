@@ -1,6 +1,6 @@
 package com.backthree.cohobby.domain.hobby.controller;
 
-import com.backthree.cohobby.domain.hobby.dto.response.GetHobbyResponse;
+//import com.backthree.cohobby.domain.hobby.dto.response.GetHobbyResponse;
 import com.backthree.cohobby.domain.hobby.service.HobbyService;
 import com.backthree.cohobby.global.common.BaseResponse;
 import com.backthree.cohobby.global.common.response.status.ErrorStatus;
@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name="Hobby", description="취미 관련 API")
+/*@Tag(name="Hobby", description="취미 관련 API")
 @RestController
 @RequestMapping("/hobbys")
 public class HobbyController {
-    private final HobbyService hobbyService;
+    /*private final HobbyService hobbyService;
 
     @Operation(summary="취미 id 리스트 호출", description = "게시물 등록 화면 렌더링 시 id를 미리 가져옴")
     @ApiResponse({
@@ -31,3 +31,4 @@ public class HobbyController {
         return BaseResponse.onSuccess(hobbies);
     }
 }
+*/

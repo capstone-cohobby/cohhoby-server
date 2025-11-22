@@ -1,8 +1,9 @@
 name: CI/CD with Docker & Github Action
-
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
 
 permissions:
   contents: read
@@ -50,6 +51,7 @@ jobs:
           key: ${{ secrets.EC2_PEM_KEY }}
           port: 22
           script: |
+<<<<<<< HEAD
             cd ~/cohhoby-server/cohobby
             git pull
             
@@ -59,3 +61,33 @@ jobs:
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}
             sudo docker-compose up -d
             sudo docker image prune -f
+=======
+            set -euo pipefail
+            WORK_DIR="$HOME/cohobby-server/cohobby"
+            cd "$WORK_DIR"
+            git config core.filemode false || true
+            git fetch origin main
+            git reset --hard origin/main
+
+            DOCKER_IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ github.sha }}"
+            echo "Pull image $DOCKER_IMAGE"
+
+            sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            sudo docker pull "$DOCKER_IMAGE"
+
+            # docker-compose.yml 의 image 라인을 현재 SHA 이미지로 교체
+            sed -i "s#^ *image:.*#    image: \"$DOCKER_IMAGE\"#" "$WORK_DIR/docker-compose.yml"
+
+            # 환경 변수를 export하고 sudo -E로 환경 변수 전달
+            export COMMIT_SHA=${{ github.sha }}
+            # docker-compose 또는 docker compose 시도 (둘 다 지원)
+            # 작업 디렉토리를 명시적으로 지정
+            if command -v docker-compose &> /dev/null; then
+              sudo -E docker-compose -f "$WORK_DIR/docker-compose.yml" up -d --force-recreate --pull always
+            else
+              sudo -E docker compose -f "$WORK_DIR/docker-compose.yml" up -d --force-recreate --pull always
+            fi
+            sudo docker image prune -f
+            sudo docker ps --filter "name=cohobby-server"
+            sudo docker inspect "$DOCKER_IMAGE" | grep -i revision || true
+>>>>>>> 7fd8c809c889b80f72d60591c3df101fe233719d
