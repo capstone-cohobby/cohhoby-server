@@ -4,12 +4,14 @@ import com.backthree.cohobby.domain.post.entity.Post;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "image", schema = "cohobby")
 public class Image {
     @Id
