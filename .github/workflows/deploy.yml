@@ -5,74 +5,54 @@ on:
   pull_request:
     branches: ["main", "dev"]
 
-permissions:
-  contents: read
 
 jobs:
   build:
-    name: Build and Push Docker Image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v3
+      - uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Grant permission
+      - name: Build Jar
         working-directory: ./cohobby
-        run: chmod +x ./gradlew
+        run: ./gradlew clean bootJar -x test --no-daemon
 
-      - name: Build with Gradle
-        working-directory: ./cohobby
-        run: ./gradlew bootJar -x test --no-daemon
-
-      - name: Docker build and push
+      - name: Docker build & push
+        env:
+          IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}
+          SHA: ${{ github.sha }}
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          
-          # [수정 1] 태그를 2개 만듭니다 (latest와 github.sha)
-          # 이렇게 해야 배포 단계에서 sha로 찾을 수 있습니다.
           docker build --platform linux/amd64 \
-            -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:latest \
-            -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ github.sha }} \
+            --build-arg GIT_SHA=$SHA \
+            -t $IMAGE:latest \
+            -t $IMAGE:$SHA \
             ./cohobby
-          
-          # 두 태그 모두 푸시
-          docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ github.sha }}
+          docker push $IMAGE:latest
+          docker push $IMAGE:$SHA
 
   deploy:
     needs: build
-    name: Deploy to EC2
     runs-on: ubuntu-latest
     steps:
-      - name: SSH into EC2 and Deploy
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_PEM_KEY }}
-          port: 22
           script: |
             set -euo pipefail
             WORK_DIR="$HOME/cohobby-server/cohobby"
             cd "$WORK_DIR"
-            
-            # [수정 2] 하드코딩된 'main' 대신 현재 트리거된 브랜치를 동적으로 가져옵니다.
-            # github.ref_name은 'main' 또는 'dev'가 됩니다.
-            TARGET_BRANCH="${{ github.ref_name }}"
-            
-            echo "Deploying branch: $TARGET_BRANCH"
-            
             git config core.filemode false || true
-            git fetch origin $TARGET_BRANCH
-            git reset --hard origin/$TARGET_BRANCH
+            git fetch origin main
+            git reset --hard origin/main
 
-            # 이제 빌드 단계에서 sha 태그를 만들었으므로 찾을 수 있습니다.
             DOCKER_IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ github.sha }}"
             echo "Pull image $DOCKER_IMAGE"
 
@@ -82,13 +62,15 @@ jobs:
             # docker-compose.yml 의 image 라인을 현재 SHA 이미지로 교체
             sed -i "s#^ *image:.*#    image: \"$DOCKER_IMAGE\"#" "$WORK_DIR/docker-compose.yml"
 
+            # 환경 변수를 export하고 sudo -E로 환경 변수 전달
             export COMMIT_SHA=${{ github.sha }}
-            
+            # docker-compose 또는 docker compose 시도 (둘 다 지원)
+            # 작업 디렉토리를 명시적으로 지정
             if command -v docker-compose &> /dev/null; then
               sudo -E docker-compose -f "$WORK_DIR/docker-compose.yml" up -d --force-recreate --pull always
             else
               sudo -E docker compose -f "$WORK_DIR/docker-compose.yml" up -d --force-recreate --pull always
             fi
-            
             sudo docker image prune -f
             sudo docker ps --filter "name=cohobby-server"
+            sudo docker inspect "$DOCKER_IMAGE" | grep -i revision || true
