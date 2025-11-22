@@ -19,6 +19,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -75,6 +77,23 @@ public class PostController {
     ){
         UpdatePricingResponse payload = postService.updatePricingPost(postId, request, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
+
+    }
+
+    // 게시물 이미지 업로드
+    @PostMapping(value = "/{postId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "게시물 이미지 업로드", description = "물품 등록 과정 중 - 물품 사진을 등록합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "게시물 이미지 추가 완료")
+    })
+    @ErrorDocs({ErrorStatus.POST_NOT_FOUND, ErrorStatus.POST_AUTHOR_MISMATCH, ErrorStatus.POST_STATUS_CONFLICT})
+    public BaseResponse<UpdateImageResponse> updateImagePost(
+            @PathVariable Long postId,
+            @Valid @ModelAttribute UpdateImageRequest request,
+            @CurrentUser User user
+    ){
+        UpdateImageResponse response = postService.updateS3Images(postId, request, user.getId());
+        return BaseResponse.onSuccess(SuccessStatus._OK, response);
 
     }
 

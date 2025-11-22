@@ -31,7 +31,12 @@ public enum ErrorStatus implements BaseCode {
 
     //post 422
     AVAILABLE_PERIOD_INVALID(HttpStatus.UNPROCESSABLE_ENTITY,"POST4221", "대여 가능 기간이 올바르지 않습니다."),
-    PURCHASE_DATE_IN_FUTURE(HttpStatus.UNPROCESSABLE_ENTITY,"POST4221", "구입일은 미래일 수 없습니다.");
+    PURCHASE_DATE_IN_FUTURE(HttpStatus.UNPROCESSABLE_ENTITY,"POST4221", "구입일은 미래일 수 없습니다."),
+
+    // 이미지 관련 에러
+    INVALID_FILE_EXTENSION(HttpStatus.BAD_REQUEST, "FILE4001", "잘못된 파일 확장자입니다."),
+    NOT_IMAGE_FILE(HttpStatus.BAD_REQUEST, "FILE4002", "이미지 파일만 업로드 가능합니다."),
+    S3_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE5001", "이미지 업로드 중 소버 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

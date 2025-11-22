@@ -51,17 +51,6 @@ jobs:
           key: ${{ secrets.EC2_PEM_KEY }}
           port: 22
           script: |
-<<<<<<< HEAD
-            cd ~/cohhoby-server/cohobby
-            git pull
-            
-            # --- [수정된 부분 2] ---
-            # DOKCER -> DOCKER 로 C 추가
-            sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}
-            sudo docker-compose up -d
-            sudo docker image prune -f
-=======
             set -euo pipefail
             WORK_DIR="$HOME/cohobby-server/cohobby"
             cd "$WORK_DIR"
@@ -90,4 +79,4 @@ jobs:
             sudo docker image prune -f
             sudo docker ps --filter "name=cohobby-server"
             sudo docker inspect "$DOCKER_IMAGE" | grep -i revision || true
->>>>>>> 7fd8c809c889b80f72d60591c3df101fe233719d
+
