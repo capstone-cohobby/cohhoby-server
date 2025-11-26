@@ -4,30 +4,32 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class AiEstimateResponse {
-    @Schema(description = "AI가 추천한 최소 가격")
     private Integer suggestedLowPrice;
-
-    @Schema(description = "AI가 추천한 기준(포인트) 가격")
     private Integer suggestedPointPrice;
-
-    @Schema(description = "AI가 추천한 최대 가격")
     private Integer suggestedHighPrice;
-
-    @Schema(description = "AI가 추천한 보증금 (없으면 null)")
     private Integer suggestedDeposit;
-
-    @Schema(description = "대여 규칙")
     private String caution;
-
-    @Schema(description = "AI가 가격을 이렇게 추천한 이유 설명")
-    private String reason;
-
-    @Schema(description = "최종 판단 정도")
+    private String priceReason;   // 가격 책정 사유
+    private String depositReason; // 보증금 책정 사유
+    private String ruleReason;    // 규칙 제안 사유
     private String decision;
-
-    @Schema(description = "confidence 점수")
     private Double confidence;
+    private Integer referencePrice; // 기준 가격
+    private String referenceUrl;    // 기준 URL
+    private String referenceType;   // 기준 유형 (new/used)
+
+    // 💡 추가: 참고 자료 리스트
+    private List<EvidenceDto> evidence;
+
+    @Getter
+    @Builder
+    public static class EvidenceDto {
+        private String title;
+        private String url;
+    }
 }
