@@ -22,4 +22,12 @@ public class ChattingReadRestController {
     ) {
         return chattingReadService.getReadStatus(roomId, user.getId());
     }
+
+    @GetMapping("/rooms/{roomId}/read-status/peer")
+    public ReadReceiptDto getPeerReadStatus(
+            @PathVariable Long roomId,
+            @Parameter(hidden = true) @CurrentUser User user
+    ) {
+        return chattingReadService.getPeerReadStatus(roomId, user.getId());
+    }
 }

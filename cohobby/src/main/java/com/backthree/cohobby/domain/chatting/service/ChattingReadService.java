@@ -43,4 +43,26 @@ public class ChattingReadService {
                 .lastReadMessageId(room.getLastReadOf(user))
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public ReadReceiptDto getPeerReadStatus(Long roomId, Long userId) {
+        ChattingRoom room = roomRepo.findById(roomId).orElseThrow();
+        User user = userRepo.findById(userId).orElseThrow();
+        
+        // 상대방 찾기
+        User peer;
+        if (room.getOwner().getId().equals(userId)) {
+            peer = room.getBorrower();
+        } else if (room.getBorrower().getId().equals(userId)) {
+            peer = room.getOwner();
+        } else {
+            throw new IllegalArgumentException("채팅방에 속하지 않은 사용자");
+        }
+        
+        return ReadReceiptDto.builder()
+                .roomId(roomId)
+                .userId(peer.getId())
+                .lastReadMessageId(room.getLastReadOf(peer))
+                .build();
+    }
 }
