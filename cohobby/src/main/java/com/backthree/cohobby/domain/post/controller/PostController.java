@@ -104,7 +104,7 @@ public class PostController {
     @PostMapping("/{postId}/ai-estimate")
     public BaseResponse<AiEstimateResponse> estimate (
             @PathVariable Long postId,
-            @Valid @RequestBody AiEstimateRequest request,
+            @Valid @RequestBody AiEstimateClientRequest request,
             @Parameter(hidden = true) @CurrentUser User user
     ) {
         AiEstimateResponse payload = aiService.aiEstimate(request,postId, user.getId());
