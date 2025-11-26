@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/login", "/oauth2/**", "/favicon.ico", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/auth/token/refresh").permitAll() //토큰 갱신은 누구나 접근 가능해야 함
                         .requestMatchers("/swagger-ui/**", "/docs/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // Swagger UI는 인증 필요
+                        .requestMatchers("/ws-stomp/**").permitAll() // WebSocket 핸드셰이크 허용 (실제 인증은 STOMP CONNECT에서 처리)
                         .requestMatchers("/auth/signup-extra").authenticated() //추가 정보 api는 인증 필요
                         .anyRequest().authenticated()
                 )

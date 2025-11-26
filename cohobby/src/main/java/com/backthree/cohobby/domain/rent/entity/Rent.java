@@ -54,10 +54,6 @@ public class Rent extends BaseTimeEntity {
     private Post post;
 
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chattingRoomId", nullable = false)
-    private ChattingRoom chattingRoom;
-
     @OneToMany(mappedBy = "rent")
     private Set<Payment> payments = new LinkedHashSet<>();
 
