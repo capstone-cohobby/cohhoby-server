@@ -42,16 +42,46 @@ public class ChattingService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ChattingRoomDto> getRoomsByUser(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
         return chattingRoomRepository.findByOwnerOrBorrower(user, user).stream()
-                .map(room -> ChattingRoomDto.builder()
-                        .id(room.getId())
-                        .postId(room.getPost().getId())
-                        .ownerId(room.getOwner().getId())
-                        .borrowerId(room.getBorrower().getId())
-                        .name(room.getName())
-                        .build())
+                .map(room -> {
+                    // 상대방 정보 찾기
+                    User peer = room.getOwner().getId().equals(userId) 
+                            ? room.getBorrower() 
+                            : room.getOwner();
+                    
+                    // 마지막 메시지 조회
+                    Chatting lastChatting = chattingRepository.findLatestByRoomId(room.getId())
+                            .orElse(null);
+                    
+                    // 읽지 않은 메시지 수 계산
+                    Long lastReadMessageId = room.getLastReadOf(user);
+                    int unreadCount = 0;
+                    if (lastReadMessageId != null && lastChatting != null) {
+                        unreadCount = (int) chattingRepository.countByRoom_IdAndIdGreaterThanAndSender_IdNot(
+                                room.getId(), lastReadMessageId, userId);
+                    } else if (lastChatting != null && !lastChatting.getSender().getId().equals(userId)) {
+                        // 읽은 메시지가 없고, 마지막 메시지가 상대방이 보낸 것이면 1개 이상
+                        unreadCount = 1;
+                    }
+                    
+                    return ChattingRoomDto.builder()
+                            .id(room.getId())
+                            .postId(room.getPost().getId())
+                            .ownerId(room.getOwner().getId())
+                            .borrowerId(room.getBorrower().getId())
+                            .name(room.getName())
+                            .lastMessage(lastChatting != null ? lastChatting.getText() : null)
+                            .lastMessageTime(lastChatting != null ? lastChatting.getTime() : null)
+                            .peerName(peer.getNickname())
+                            .peerId(peer.getId())
+                            .peerProfilePicture(peer.getProfilePicture())
+                            .postGoods(room.getPost().getGoods())
+                            .unreadCount(unreadCount)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
