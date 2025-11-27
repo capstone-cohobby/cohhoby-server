@@ -19,7 +19,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -126,6 +125,8 @@ public class PostController {
     ) {
         Long userId = getCurrentUserId();
         List<Post> posts = postQueryService.getPosts(query, "search", userId);
+        // Image 엔티티 로딩 (LAZY 로딩을 위해)
+        posts.forEach(post -> post.getImages().size());
         List<GetPostResponse> response = posts.stream()
                 .map(GetPostResponse::fromEntity)
                 .collect(Collectors.toList());
@@ -143,6 +144,8 @@ public class PostController {
     ) {
         Long userId = getCurrentUserId();
         List<Post> posts = postQueryService.getPosts(String.valueOf(categoryId), "category", userId);
+        // Image 엔티티 로딩 (LAZY 로딩을 위해)
+        posts.forEach(post -> post.getImages().size());
         List<GetPostResponse> response = posts.stream()
                 .map(GetPostResponse::fromEntity)
                 .collect(Collectors.toList());
@@ -160,6 +163,8 @@ public class PostController {
     ) {
         Long userId = getCurrentUserId();
         List<Post> posts = postQueryService.getPosts(String.valueOf(hobbyId), "hobby", userId);
+        // Image 엔티티 로딩 (LAZY 로딩을 위해)
+        posts.forEach(post -> post.getImages().size());
         List<GetPostResponse> response = posts.stream()
                 .map(GetPostResponse::fromEntity)
                 .collect(Collectors.toList());
