@@ -21,7 +21,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 
 @Configuration
 @EnableWebSecurity
@@ -33,6 +36,9 @@ public class SecurityConfig {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -113,12 +119,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 🔥 여기에 실제 프론트 주소 적기
-        config.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://127.0.0.1:3000"
-        ));
+        // 환경변수에서 프론트엔드 URL 가져오기 (없으면 기본값: localhost:3000)
+        List<String> allowedOrigins = new ArrayList<>();
+        allowedOrigins.add("http://localhost:3000");
+        allowedOrigins.add("http://127.0.0.1:3000");
+        
+        // 환경변수로 설정된 프론트엔드 URL 추가
+        if (frontendUrl != null && !frontendUrl.isEmpty()) {
+            allowedOrigins.add(frontendUrl);
+        }
 
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowCredentials(true);

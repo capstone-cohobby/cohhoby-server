@@ -42,3 +42,8 @@ logging:
     org.springframework.security: DEBUG
     # JWT 관련 로직이 있는 패키지 경로 (본인 패키지명에 맞게 수정)
     com.backthree.cohobby.config.security: DEBUG
+
+# 프론트엔드 URL 설정 (CORS 및 OAuth 리다이렉트에 사용)
+app:
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
