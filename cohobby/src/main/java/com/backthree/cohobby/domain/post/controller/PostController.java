@@ -26,6 +26,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 @Tag(name="Post", description = "게시물 관련 API")
 @RestController
 @RequestMapping("/posts")
@@ -121,7 +124,8 @@ public class PostController {
             @Parameter(description = "검색어", example = "나이키")
             @RequestParam(required = false) String query
     ) {
-        List<Post> posts = postQueryService.getPosts(query, "search");
+        Long userId = getCurrentUserId();
+        List<Post> posts = postQueryService.getPosts(query, "search", userId);
         List<GetPostResponse> response = posts.stream()
                 .map(GetPostResponse::fromEntity)
                 .collect(Collectors.toList());
@@ -137,7 +141,8 @@ public class PostController {
             @Parameter(description = "카테고리 ID", example = "1")
             @PathVariable Long categoryId
     ) {
-        List<Post> posts = postQueryService.getPosts(String.valueOf(categoryId), "category");
+        Long userId = getCurrentUserId();
+        List<Post> posts = postQueryService.getPosts(String.valueOf(categoryId), "category", userId);
         List<GetPostResponse> response = posts.stream()
                 .map(GetPostResponse::fromEntity)
                 .collect(Collectors.toList());
@@ -153,7 +158,8 @@ public class PostController {
             @Parameter(description = "취미 ID", example = "1")
             @PathVariable Long hobbyId
     ) {
-        List<Post> posts = postQueryService.getPosts(String.valueOf(hobbyId), "hobby");
+        Long userId = getCurrentUserId();
+        List<Post> posts = postQueryService.getPosts(String.valueOf(hobbyId), "hobby", userId);
         List<GetPostResponse> response = posts.stream()
                 .map(GetPostResponse::fromEntity)
                 .collect(Collectors.toList());
@@ -174,4 +180,14 @@ public class PostController {
         return BaseResponse.onSuccess(SuccessStatus._OK, response);
     }
 
+    /**
+     * 현재 로그인한 사용자 ID를 가져옵니다. 로그인하지 않은 경우 null을 반환합니다.
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            return ((User) authentication.getPrincipal()).getId();
+        }
+        return null;
+    }
 }
