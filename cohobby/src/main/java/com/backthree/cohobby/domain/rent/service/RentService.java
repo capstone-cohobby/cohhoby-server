@@ -1,6 +1,7 @@
 package com.backthree.cohobby.domain.rent.service;
 
 import com.backthree.cohobby.domain.rent.dto.request.UpdateDetailRequest;
+import com.backthree.cohobby.domain.rent.dto.response.RentDetailResponse;
 import com.backthree.cohobby.domain.rent.dto.response.UpdateDetailResponse;
 import com.backthree.cohobby.domain.rent.entity.Rent;
 import com.backthree.cohobby.domain.rent.repository.RentRepository;
@@ -15,6 +16,19 @@ import java.time.LocalDateTime;
 public class RentService {
 
     private final RentRepository rentRepository;
+
+    @Transactional(readOnly = true)
+    public RentDetailResponse getRentDetail(Long roomId, Long userId) {
+        Rent rent = rentRepository.findByChattingRoomId(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("대여 정보를 찾을 수 없습니다. roomId=" + roomId));
+        
+        // 권한 검증: owner 또는 borrower만 조회 가능
+        if (!rent.getOwner().getId().equals(userId) && !rent.getBorrower().getId().equals(userId)) {
+            throw new IllegalArgumentException("대여 정보를 조회할 권한이 없습니다.");
+        }
+
+        return RentDetailResponse.fromEntity(rent);
+    }
 
     @Transactional
     public UpdateDetailResponse updateDetail(Long roomId, UpdateDetailRequest request, Long userId) {
