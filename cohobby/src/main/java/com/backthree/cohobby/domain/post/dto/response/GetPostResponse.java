@@ -44,12 +44,27 @@ public class GetPostResponse {
     private String userNickname;
 
     public static GetPostResponse fromEntity(Post post) {
+        // 이미지 URL 추출: Image 엔티티의 첫 번째 이미지를 우선 사용, 없으면 post.imageUrl 사용
+        String imageUrl = null;
+        if (post.getImages() != null && !post.getImages().isEmpty()) {
+            // Image 엔티티에서 첫 번째 이미지 URL 가져오기
+            imageUrl = post.getImages().stream()
+                    .filter(image -> image.getImageUrl() != null)
+                    .map(image -> image.getImageUrl())
+                    .findFirst()
+                    .orElse(null);
+        }
+        // Image 엔티티에 이미지가 없으면 post.imageUrl 사용
+        if (imageUrl == null) {
+            imageUrl = post.getImageUrl();
+        }
+
         return GetPostResponse.builder()
                 .postId(post.getId())
                 .goods(post.getGoods())
                 .dailyPrice(post.getDailyPrice())
                 .deposit(post.getDeposit())
-                .imageUrl(post.getImageUrl())
+                .imageUrl(imageUrl)
                 .availableFrom(post.getAvailableFrom())
                 .availableUntil(post.getAvailableUntil())
                 .hobbyName(post.getHobby() != null ? post.getHobby().getName() : null)
