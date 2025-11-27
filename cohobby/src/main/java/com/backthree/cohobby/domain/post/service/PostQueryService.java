@@ -16,12 +16,17 @@ import java.util.List;
 public class PostQueryService {
     private final PostRepository postRepository;
     
-    public List<Post> getPosts(String query, String type) {
+    public List<Post> getPosts(String query, String type, Long excludeUserId) {
         QPost post = QPost.post;
         BooleanBuilder builder = new BooleanBuilder();
 
         // PUBLISHED 상태인 게시물만 조회
         builder.and(post.status.eq(PostStatus.PUBLISHED));
+
+        // 자신의 게시물 제외 (로그인한 경우에만)
+        if (excludeUserId != null) {
+            builder.and(post.user.id.ne(excludeUserId));
+        }
 
         // type과 query가 null이 아닐 때만 필터링 조건 추가
         if (type != null && query != null && !query.trim().isEmpty()) {

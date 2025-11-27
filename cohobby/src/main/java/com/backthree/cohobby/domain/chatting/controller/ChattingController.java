@@ -6,7 +6,6 @@ import com.backthree.cohobby.domain.chatting.service.ChattingService;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.global.annotation.CurrentUser;
 import io.swagger.v3.oas.annotations.Parameter;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
