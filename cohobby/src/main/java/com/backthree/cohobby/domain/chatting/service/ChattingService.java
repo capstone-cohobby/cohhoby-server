@@ -97,13 +97,7 @@ public class ChattingService {
         // 필요 시 중복 구분용 suffix 예: + " #" + System.currentTimeMillis()
         String roomName = owner.getNickname() + " & " + borrower.getNickname();
 
-        ChattingRoom room = chattingRoomRepository.save(ChattingRoom.builder()
-                .post(post)
-                .owner(owner)
-                .borrower(borrower)
-                .name(roomName)
-                .build());
-
+        // Rent를 먼저 생성 (ChattingRoom의 rent_id가 NOT NULL이므로)
         //시작일, 반환일, 최종 가격, 통화 추후에 RentService에서 업데이트
         //환불 정책은 기본값 있지만 RentService에서 업데이트 가능
         Rent rent = rentRepository.save(Rent.builder()
@@ -113,9 +107,14 @@ public class ChattingService {
                 .status(RentStatus.CREATED)
                 .build());
 
-        // 생성한 rent를 room에 설정하고 저장
-        room.setRent(rent);
-        chattingRoomRepository.save(room);
+        // Rent를 포함한 ChattingRoom 생성 및 저장
+        ChattingRoom room = chattingRoomRepository.save(ChattingRoom.builder()
+                .post(post)
+                .owner(owner)
+                .borrower(borrower)
+                .name(roomName)
+                .rent(rent)  // Rent를 포함해서 저장
+                .build());
 
         return ChattingRoomDto.builder()
                 .id(room.getId())
