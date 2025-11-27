@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Tag(name="Post", description = "게시물 관련 API")
 @RestController
@@ -111,6 +112,52 @@ public class PostController {
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
     }
 
+    @Operation(summary = "게시물 조회(검색)", description = "검색어로 게시물을 조회합니다. 취미명 또는 상품명에 검색어가 포함된 게시물을 반환합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "게시물 조회 성공"),
+    })
+    @GetMapping("/search")
+    public BaseResponse<List<GetPostResponse>> getPostsBySearch(
+            @Parameter(description = "검색어", example = "나이키")
+            @RequestParam(required = false) String query
+    ) {
+        List<Post> posts = postQueryService.getPosts(query, "search");
+        List<GetPostResponse> response = posts.stream()
+                .map(GetPostResponse::fromEntity)
+                .collect(Collectors.toList());
+        return BaseResponse.onSuccess(SuccessStatus._OK, response);
+    }
 
+    @Operation(summary = "게시물 조회(카테고리)", description = "카테고리 ID로 게시물을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "게시물 조회 성공"),
+    })
+    @GetMapping("/category/{categoryId}")
+    public BaseResponse<List<GetPostResponse>> getPostsByCategory(
+            @Parameter(description = "카테고리 ID", example = "1")
+            @PathVariable Long categoryId
+    ) {
+        List<Post> posts = postQueryService.getPosts(String.valueOf(categoryId), "category");
+        List<GetPostResponse> response = posts.stream()
+                .map(GetPostResponse::fromEntity)
+                .collect(Collectors.toList());
+        return BaseResponse.onSuccess(SuccessStatus._OK, response);
+    }
+
+    @Operation(summary = "게시물 조회(취미)", description = "취미 ID로 게시물을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "게시물 조회 성공"),
+    })
+    @GetMapping("/hobby/{hobbyId}")
+    public BaseResponse<List<GetPostResponse>> getPostsByHobby(
+            @Parameter(description = "취미 ID", example = "1")
+            @PathVariable Long hobbyId
+    ) {
+        List<Post> posts = postQueryService.getPosts(String.valueOf(hobbyId), "hobby");
+        List<GetPostResponse> response = posts.stream()
+                .map(GetPostResponse::fromEntity)
+                .collect(Collectors.toList());
+        return BaseResponse.onSuccess(SuccessStatus._OK, response);
+    }
 
 }
