@@ -160,4 +160,18 @@ public class PostController {
         return BaseResponse.onSuccess(SuccessStatus._OK, response);
     }
 
+    @Operation(summary = "게시물 상세 조회", description = "게시물 ID로 상세 정보를 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "게시물 상세 조회 성공"),
+    })
+    @ErrorDocs({ErrorStatus.POST_NOT_FOUND})
+    @GetMapping("/{postId}")
+    public BaseResponse<GetPostDetailResponse> getPostDetail(
+            @Parameter(description = "게시물 ID", example = "1")
+            @PathVariable Long postId
+    ) {
+        GetPostDetailResponse response = postService.getPostDetail(postId);
+        return BaseResponse.onSuccess(SuccessStatus._OK, response);
+    }
+
 }

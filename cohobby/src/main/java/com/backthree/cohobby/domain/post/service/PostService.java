@@ -15,10 +15,10 @@ import com.backthree.cohobby.global.exception.GeneralException;
 import io.awspring.cloud.s3.ObjectMetadata;
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.backthree.cohobby.global.common.response.status.ErrorStatus;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -188,6 +188,21 @@ public class PostService {
         }
 
         return UpdateImageResponse.from(uploadedUrls);
+    }
+
+    // 게시물 상세 조회
+    @Transactional(readOnly = true)
+    public GetPostDetailResponse getPostDetail(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
+        
+        // 이미지 로딩 (LAZY 로딩을 위해)
+        post.getImages().size();
+        
+        // PUBLISHED 상태인 게시물만 조회 가능 (작성자는 DRAFT도 조회 가능)
+        // TODO: 작성자 확인 로직 추가 필요시
+        
+        return GetPostDetailResponse.fromEntity(post);
     }
 
     // 확장자 추출 메서드
