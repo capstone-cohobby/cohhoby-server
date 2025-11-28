@@ -19,6 +19,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Map;
 
 @Slf4j
@@ -77,7 +78,7 @@ public class ChattingStompController {
                 .sender(sender)
                 .receiver(receiver)
                 .text(message.getText())
-                .time(LocalDateTime.now())
+                .time(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
                 .build());
 
         ChattingDto payload = ChattingDto.builder()

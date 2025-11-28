@@ -1,6 +1,7 @@
 package com.backthree.cohobby.domain.rent.service;
 
 import com.backthree.cohobby.domain.rent.dto.request.UpdateDetailRequest;
+import com.backthree.cohobby.domain.rent.dto.response.RentDetailResponse;
 import com.backthree.cohobby.domain.rent.dto.response.UpdateDetailResponse;
 import com.backthree.cohobby.domain.rent.entity.Rent;
 import com.backthree.cohobby.domain.rent.repository.RentRepository;
@@ -16,6 +17,19 @@ public class RentService {
 
     private final RentRepository rentRepository;
 
+    @Transactional(readOnly = true)
+    public RentDetailResponse getDetail(Long roomId, Long userId) {
+        Rent rent = rentRepository.findByChattingRoomId(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("대여 정보를 찾을 수 없습니다. roomId=" + roomId));
+        
+        // 권한 검증: owner 또는 borrower만 조회 가능
+        if (!rent.getOwner().getId().equals(userId) && !rent.getBorrower().getId().equals(userId)) {
+            throw new IllegalArgumentException("대여 정보를 조회할 권한이 없습니다.");
+        }
+
+        return RentDetailResponse.fromEntity(rent);
+    }
+
     @Transactional
     public UpdateDetailResponse updateDetail(Long roomId, UpdateDetailRequest request, Long userId) {
         Rent rent = rentRepository.findByChattingRoomId(roomId)
@@ -29,18 +43,28 @@ public class RentService {
         boolean hasStart = request.getStartAt() != null;
         boolean hasDue = request.getDuedate() != null;
         boolean hasRule = request.getRule() != null && !request.getRule().isBlank();
+        boolean hasDailyPrice = request.getDailyPrice() != null;
 
         if (hasStart || hasDue) {
-            if (!(hasStart && hasDue) || hasRule) {
-                throw new IllegalArgumentException("대여 시작/종료 날짜는 함께 제공되어야 하며, 규칙과 함께 제공되면 안됩니다.");
+            if (!(hasStart && hasDue) || hasRule || hasDailyPrice) {
+                throw new IllegalArgumentException("대여 시작/종료 날짜는 함께 제공되어야 하며, 규칙이나 일일 대여료와 함께 제공되면 안됩니다.");
             }
             LocalDateTime startAt = request.getStartAt().atStartOfDay();
             LocalDateTime duedate = request.getDuedate().atStartOfDay();
             rent.updateDates(startAt, duedate);
+            // 날짜 변경 시 totalPrice 재계산
+            rent.calculateAndUpdateTotalPrice();
         } else if (hasRule) {
+            if (hasDailyPrice) {
+                throw new IllegalArgumentException("규칙과 일일 대여료는 함께 업데이트할 수 없습니다.");
+            }
             rent.updateRule(request.getRule());
+        } else if (hasDailyPrice) {
+            rent.updateDailyPrice(request.getDailyPrice());
+            // 일일 대여료 변경 시 totalPrice 재계산
+            rent.calculateAndUpdateTotalPrice();
         } else {
-            throw new IllegalArgumentException("업데이트할 값이 없습니다. (startAt+duedate 한 쌍 또는 rule 중 하나 필요)");
+            throw new IllegalArgumentException("업데이트할 값이 없습니다. (startAt+duedate 한 쌍, rule, dailyPrice 중 하나 필요)");
         }
 
         rentRepository.save(rent);

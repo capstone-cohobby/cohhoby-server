@@ -19,4 +19,7 @@ public class UpdateDetailRequest {
 
     @Schema(description = "대여 규칙", example = "신발 밑창이 떨어질시 : 5만원")
     private String rule;
+
+    @Schema(description = "일일 대여료", example = "8000")
+    private Integer dailyPrice;
 }
