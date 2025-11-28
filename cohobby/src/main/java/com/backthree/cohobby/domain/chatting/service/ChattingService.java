@@ -124,6 +124,18 @@ public class ChattingService {
         }
 
         Rent rent = rentRepository.save(rentBuilder.build());
+        
+        // totalPrice 자동 계산 (날짜와 일일 대여료가 모두 있을 경우)
+        rent.calculateAndUpdateTotalPrice();
+        
+        // totalPrice가 계산되지 않은 경우에만 프론트엔드에서 전달받은 값 사용
+        if (rent.getTotalPrice() == null && totalPrice != null) {
+            rent.updateTotalPrice(totalPrice);
+            rent = rentRepository.save(rent);
+        } else if (rent.getTotalPrice() != null) {
+            // 계산된 totalPrice로 업데이트
+            rent = rentRepository.save(rent);
+        }
 
         // Rent를 포함한 ChattingRoom 생성 및 저장
         ChattingRoom room = chattingRoomRepository.save(ChattingRoom.builder()
