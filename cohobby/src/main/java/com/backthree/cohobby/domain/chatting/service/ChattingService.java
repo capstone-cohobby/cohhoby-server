@@ -105,7 +105,8 @@ public class ChattingService {
                 .post(post)
                 .owner(owner)
                 .borrower(borrower)
-                .status(RentStatus.CREATED);
+                .status(RentStatus.CREATED)
+                .dailyPrice(post.getDailyPrice()); // Post의 일일 대여료를 Rent에 반영
 
         // 날짜 정보가 있으면 설정
         if (startDate != null && endDate != null) {

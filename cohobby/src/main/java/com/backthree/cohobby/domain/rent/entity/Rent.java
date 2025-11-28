@@ -35,6 +35,8 @@ public class Rent extends BaseTimeEntity {
 
     private Integer totalPrice;
 
+    private Integer dailyPrice;
+
     @Column(length = 3)
     private String currency;
 
