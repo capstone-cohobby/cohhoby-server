@@ -123,8 +123,7 @@ public class PostController {
             @Parameter(description = "검색어", example = "나이키")
             @RequestParam(required = false) String query
     ) {
-        Long userId = getCurrentUserId();
-        List<Post> posts = postQueryService.getPosts(query, "search", userId);
+        List<Post> posts = postQueryService.getPosts(query, "search", null);
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
         List<GetPostResponse> response = posts.stream()
@@ -142,8 +141,7 @@ public class PostController {
             @Parameter(description = "카테고리 ID", example = "1")
             @PathVariable Long categoryId
     ) {
-        Long userId = getCurrentUserId();
-        List<Post> posts = postQueryService.getPosts(String.valueOf(categoryId), "category", userId);
+        List<Post> posts = postQueryService.getPosts(String.valueOf(categoryId), "category", null);
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
         List<GetPostResponse> response = posts.stream()
@@ -161,8 +159,7 @@ public class PostController {
             @Parameter(description = "취미 ID", example = "1")
             @PathVariable Long hobbyId
     ) {
-        Long userId = getCurrentUserId();
-        List<Post> posts = postQueryService.getPosts(String.valueOf(hobbyId), "hobby", userId);
+        List<Post> posts = postQueryService.getPosts(String.valueOf(hobbyId), "hobby", null);
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
         List<GetPostResponse> response = posts.stream()
