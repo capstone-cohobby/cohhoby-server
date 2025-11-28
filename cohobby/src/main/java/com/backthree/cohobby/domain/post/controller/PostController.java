@@ -114,7 +114,7 @@ public class PostController {
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
     }
 
-    @Operation(summary = "게시물 조회(검색)", description = "검색어로 게시물을 조회합니다. 취미명 또는 상품명에 검색어가 포함된 게시물을 반환합니다.")
+    @Operation(summary = "게시물 조회(검색)", description = "검색어로 게시물을 조회합니다. 상품명에 검색어가 포함된 게시물을 반환합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "게시물 조회 성공"),
     })
