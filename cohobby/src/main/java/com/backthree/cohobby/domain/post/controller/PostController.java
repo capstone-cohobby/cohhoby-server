@@ -182,6 +182,18 @@ public class PostController {
         return BaseResponse.onSuccess(SuccessStatus._OK, response);
     }
 
+    @Operation(summary = "내 등록 상품 조회", description = "현재 사용자가 등록한 게시물 목록을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "등록 상품 조회 성공"),
+    })
+    @GetMapping("/my-posts")
+    public BaseResponse<List<GetPostResponse>> getMyPosts(
+            @Parameter(hidden = true) @CurrentUser User user
+    ) {
+        List<GetPostResponse> response = postService.getMyPosts(user.getId());
+        return BaseResponse.onSuccess(SuccessStatus._OK, response);
+    }
+
     /**
      * 현재 로그인한 사용자 ID를 가져옵니다. 로그인하지 않은 경우 null을 반환합니다.
      */
