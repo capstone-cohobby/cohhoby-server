@@ -12,6 +12,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -34,6 +35,8 @@ public class Rent extends BaseTimeEntity {
     private RentStatus status;
 
     private Integer totalPrice;
+
+    private Integer dailyPrice;
 
     @Column(length = 3)
     private String currency;
@@ -74,5 +77,31 @@ public class Rent extends BaseTimeEntity {
 
     public void updateRule(String rule) {
         this.rule = rule;
+    }
+
+    public void updateDailyPrice(Integer dailyPrice) {
+        this.dailyPrice = dailyPrice;
+    }
+
+    public void updateTotalPrice(Integer totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+
+    // totalPrice 계산 및 업데이트
+    public void calculateAndUpdateTotalPrice() {
+        if (this.dailyPrice != null && this.startAt != null && this.duedate != null) {
+            // 대여 일수 계산 (시작일과 종료일 포함)
+            long days = ChronoUnit.DAYS.between(
+                this.startAt.toLocalDate(),
+                this.duedate.toLocalDate()
+            ) + 1;
+            
+            // totalPrice = 일일 대여료 * 대여 일수
+            this.totalPrice = (int) (this.dailyPrice * days);
+        } else {
+            // 날짜나 일일 대여료가 없으면 totalPrice를 null로 설정하지 않음 (기존 값 유지)
+            // 만약 명시적으로 null로 설정하려면 주석을 해제하세요
+            // this.totalPrice = null;
+        }
     }
 }

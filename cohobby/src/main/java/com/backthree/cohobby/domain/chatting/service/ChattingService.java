@@ -17,7 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -87,7 +90,7 @@ public class ChattingService {
     }
 
     @Transactional
-    public ChattingRoomDto createRoom(Long postId, Long borrowerId) {
+    public ChattingRoomDto createRoom(Long postId, Long borrowerId, String startDate, String endDate, Integer totalPrice) {
 
         User borrower = userRepository.findById(borrowerId).orElseThrow();
         Post post = postRepository.findById(postId).orElseThrow();
@@ -98,14 +101,41 @@ public class ChattingService {
         String roomName = owner.getNickname() + " & " + borrower.getNickname();
 
         // Rent를 먼저 생성 (ChattingRoom의 rent_id가 NOT NULL이므로)
-        //시작일, 반환일, 최종 가격, 통화 추후에 RentService에서 업데이트
-        //환불 정책은 기본값 있지만 RentService에서 업데이트 가능
-        Rent rent = rentRepository.save(Rent.builder()
+        Rent.RentBuilder rentBuilder = Rent.builder()
                 .post(post)
                 .owner(owner)
                 .borrower(borrower)
                 .status(RentStatus.CREATED)
-                .build());
+                .dailyPrice(post.getDailyPrice()); // Post의 일일 대여료를 Rent에 반영
+
+        // 날짜 정보가 있으면 설정
+        if (startDate != null && endDate != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate start = LocalDate.parse(startDate, formatter);
+            LocalDate end = LocalDate.parse(endDate, formatter);
+            rentBuilder.startAt(start.atStartOfDay().atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime());
+            rentBuilder.duedate(end.atStartOfDay().atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime());
+        }
+
+        // 가격 정보가 있으면 설정
+        if (totalPrice != null) {
+            rentBuilder.totalPrice(totalPrice);
+            rentBuilder.currency("KRW"); // 기본 통화는 KRW
+        }
+
+        Rent rent = rentRepository.save(rentBuilder.build());
+
+        // totalPrice 자동 계산 (날짜와 일일 대여료가 모두 있을 경우)
+        rent.calculateAndUpdateTotalPrice();
+
+        // totalPrice가 계산되지 않은 경우에만 프론트엔드에서 전달받은 값 사용
+        if (rent.getTotalPrice() == null && totalPrice != null) {
+            rent.updateTotalPrice(totalPrice);
+            rent = rentRepository.save(rent);
+        } else if (rent.getTotalPrice() != null) {
+            // 계산된 totalPrice로 업데이트
+            rent = rentRepository.save(rent);
+        }
 
         // Rent를 포함한 ChattingRoom 생성 및 저장
         ChattingRoom room = chattingRoomRepository.save(ChattingRoom.builder()
@@ -115,6 +145,10 @@ public class ChattingService {
                 .name(roomName)
                 .rent(rent)  // Rent를 포함해서 저장
                 .build());
+
+        // 생성한 rent를 room에 설정하고 저장
+        room.setRent(rent);
+        chattingRoomRepository.save(room);
 
         return ChattingRoomDto.builder()
                 .id(room.getId())

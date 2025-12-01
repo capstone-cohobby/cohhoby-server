@@ -37,6 +37,20 @@ public class ChattingController {
     ) {
         Long postId = Long.valueOf(request.get("postId").toString());
         Long borrowerId = user.getId(); // 현재 로그인한 사용자가 borrower
-        return chattingService.createRoom(postId, borrowerId);
+        
+        // 날짜와 가격 정보 추출 (선택적)
+        String startDate = request.get("startDate") != null ? request.get("startDate").toString() : null;
+        String endDate = request.get("endDate") != null ? request.get("endDate").toString() : null;
+        Integer totalPrice = null;
+        if (request.get("totalPrice") != null) {
+            Object priceObj = request.get("totalPrice");
+            if (priceObj instanceof Number) {
+                totalPrice = ((Number) priceObj).intValue();
+            } else {
+                totalPrice = Integer.valueOf(priceObj.toString());
+            }
+        }
+        
+        return chattingService.createRoom(postId, borrowerId, startDate, endDate, totalPrice);
     }
 }
