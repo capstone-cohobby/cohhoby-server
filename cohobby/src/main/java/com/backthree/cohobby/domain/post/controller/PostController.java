@@ -3,9 +3,6 @@ package com.backthree.cohobby.domain.post.controller;
 import com.backthree.cohobby.domain.post.dto.request.*;
 import com.backthree.cohobby.domain.post.dto.response.*;
 import com.backthree.cohobby.domain.post.entity.Post;
-import com.backthree.cohobby.domain.like.dto.response.CreateLikeResponse;
-import com.backthree.cohobby.domain.like.dto.response.DeleteLikeResponse;
-import com.backthree.cohobby.domain.like.service.LikeService;
 import com.backthree.cohobby.domain.post.service.AIEstimateService;
 import com.backthree.cohobby.domain.post.service.PostQueryService;
 import com.backthree.cohobby.domain.post.service.PostService;
@@ -39,7 +36,6 @@ public class PostController {
     private final PostService postService;
     private final PostQueryService postQueryService;
     private final AIEstimateService aiService;
-    private final LikeService likeService;
     @Operation(summary = "게시글 초안 생성", description = "물품 정보 입력을 시작할 때 게시글의 초기 DRAFT 상태를 생성합니다.")
     @ApiResponses({
             @ApiResponse(responseCode="201", description="게시물 생성 성공"),
@@ -217,36 +213,5 @@ public class PostController {
         List<GetPostResponse> response = postService.getMyPosts(user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, response);
     }
-
-    @Operation(summary = "게시물 찜 생성", description = "특정 게시물에 찜을 생성합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "찜 생성 성공"),
-    })
-    @ErrorDocs({ErrorStatus.POST_NOT_FOUND, ErrorStatus.USER_NOT_FOUND, ErrorStatus.LIKE_ALREADY_EXISTS})
-    @PostMapping("/{postId}/likes")
-    public BaseResponse<CreateLikeResponse> createLike(
-            @Parameter(description = "게시물 ID", example = "1")
-            @PathVariable Long postId,
-            @Parameter(hidden = true) @CurrentUser User user
-    ) {
-        CreateLikeResponse payload = likeService.createLike(postId, user.getId());
-        return BaseResponse.onSuccess(SuccessStatus._CREATED, payload);
-    }
-
-    @Operation(summary = "게시물 찜 취소", description = "특정 게시물의 찜을 취소합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "찜 취소 성공"),
-    })
-    @ErrorDocs({ErrorStatus.POST_NOT_FOUND, ErrorStatus.USER_NOT_FOUND, ErrorStatus.LIKE_NOT_FOUND})
-    @DeleteMapping("/{postId}/likes")
-    public BaseResponse<DeleteLikeResponse> deleteLike(
-            @Parameter(description = "게시물 ID", example = "1")
-            @PathVariable Long postId,
-            @Parameter(hidden = true) @CurrentUser User user
-    ) {
-        DeleteLikeResponse payload = likeService.deleteLike(postId, user.getId());
-        return BaseResponse.onSuccess(SuccessStatus._OK, payload);
-    }
-
 
 }

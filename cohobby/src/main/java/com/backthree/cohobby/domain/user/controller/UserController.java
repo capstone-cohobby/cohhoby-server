@@ -2,6 +2,8 @@ package com.backthree.cohobby.domain.user.controller;
 
 import com.backthree.cohobby.domain.like.service.LikeService;
 import com.backthree.cohobby.domain.post.dto.response.GetPostResponse;
+import com.backthree.cohobby.domain.post.entity.Post;
+import com.backthree.cohobby.domain.post.repository.PostRepository;
 import com.backthree.cohobby.domain.user.dto.UserResponseDTO;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.service.UserService;
@@ -26,6 +28,7 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final LikeService likeService;
+    private final PostRepository postRepository;
 
     @Operation(summary = "사용자 프로필 조회", description = "사용자 ID로 프로필 정보를 조회합니다.")
     @ApiResponses({
@@ -46,8 +49,24 @@ public class UserController {
             @RequestParam(required = false) Long categoryId,
             @Parameter(hidden = true) @CurrentUser User user
     ) {
-        List<GetPostResponse> response = likeService.getMyLikes(user.getId(), categoryId);
-        return BaseResponse.onSuccess(SuccessStatus._OK, response);
+        List<GetPostResponse> allLikedPosts = likeService.getLikedPosts(user.getId());
+        
+        // categoryId가 제공된 경우 필터링
+        if (categoryId != null) {
+            allLikedPosts = allLikedPosts.stream()
+                .filter(post -> {
+                    // Post 엔티티를 조회해서 hobby의 categoryId 확인
+                    Post postEntity = postRepository.findById(post.getPostId()).orElse(null);
+                    if (postEntity != null && postEntity.getHobby() != null && 
+                        postEntity.getHobby().getCategory() != null) {
+                        return postEntity.getHobby().getCategory().getId().equals(categoryId);
+                    }
+                    return false;
+                })
+                .collect(java.util.stream.Collectors.toList());
+        }
+        
+        return BaseResponse.onSuccess(SuccessStatus._OK, allLikedPosts);
     }
 }
 

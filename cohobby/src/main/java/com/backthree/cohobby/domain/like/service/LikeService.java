@@ -29,13 +29,13 @@ public class LikeService {
     public boolean toggleLike(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
-        
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
         // 이미 좋아요가 있는지 확인
         Optional<Like> existingLike = likeRepository.findByUserAndPost(user, post);
-        
+
         if (existingLike.isPresent()) {
             // 좋아요가 있으면 삭제 (좋아요 취소)
             likeRepository.delete(existingLike.get());
@@ -54,7 +54,7 @@ public class LikeService {
     public boolean isLiked(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
-        
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
@@ -67,18 +67,17 @@ public class LikeService {
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
         List<Like> likes = likeRepository.findByUser(user);
-        
+
         // Like 엔티티에서 Post를 추출하고, Image 엔티티 로딩 (LAZY 로딩을 위해)
         List<Post> posts = likes.stream()
                 .map(Like::getPost)
                 .collect(Collectors.toList());
-        
+
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
-        
+
         return posts.stream()
                 .map(GetPostResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 }
-
