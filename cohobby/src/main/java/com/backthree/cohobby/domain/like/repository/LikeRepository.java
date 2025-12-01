@@ -10,8 +10,6 @@ import java.util.Optional;
 
 public interface LikeRepository extends JpaRepository<Like, Long> {
     Optional<Like> findByUserAndPost(User user, Post post);
-    
-    List<Like> findByUserOrderByCreatedAtDesc(User user);
-    
     boolean existsByUserAndPost(User user, Post post);
+    List<Like> findByUser(User user);
 }

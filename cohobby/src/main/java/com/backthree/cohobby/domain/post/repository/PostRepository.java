@@ -6,11 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long>, PostQueryDsl {
-    //id로 채팅방 찾는 메서드
-    Post findById(long id);
+    //id로 게시물 찾는 메서드
+    Optional<Post> findById(Long id);
     
     // 사용자가 등록한 게시물 조회
     List<Post> findByUserOrderByCreatedAtDesc(User user);
