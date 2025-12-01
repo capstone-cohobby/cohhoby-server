@@ -6,15 +6,21 @@ import com.backthree.cohobby.domain.post.dto.request.AiEstimateClientRequest;
 import com.backthree.cohobby.domain.post.dto.request.AiEstimateRequest;
 import com.backthree.cohobby.domain.post.dto.response.AiEstimateRawResponse;
 import com.backthree.cohobby.domain.post.dto.response.AiEstimateResponse;
+import com.backthree.cohobby.domain.post.entity.AiEstimateReport;
+import com.backthree.cohobby.domain.post.entity.Post;
+import com.backthree.cohobby.domain.post.repository.AiEstimateReportRepository;
 import com.backthree.cohobby.domain.post.repository.PostRepository;
 import com.backthree.cohobby.domain.user.service.UserService;
 import com.backthree.cohobby.global.common.response.status.ErrorStatus;
 import com.backthree.cohobby.global.exception.GeneralException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +33,7 @@ public class AIEstimateService {
     private final UserService userService;
     private final RestTemplate restTemplate;
     private final HobbyRepository hobbyRepository;
+    private final AiEstimateReportRepository aiEstimateReportRepository;
 
     @Value("${ai.api.url}")
     private String aiApiUrl;
@@ -123,6 +130,40 @@ public class AIEstimateService {
                     .collect(Collectors.toList()); // Java 버전에 따라 .toList() 가능
         }
 
+        // Evidence 리스트를 JSON 문자열로 변환 (예: Jackson 사용)
+        ObjectMapper objectMapper = new ObjectMapper();
+        String evidenceJson = "";
+        try {
+            evidenceJson = objectMapper.writeValueAsString(evidenceList);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Evidence 직렬화 실패", e);
+        }
+
+        // 게시글 조회
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
+
+        // DB 저장
+        AiEstimateReport report = AiEstimateReport.builder()
+                .post(post)
+                .suggestedLowPrice(low)
+                .suggestedPointPrice(point)
+                .suggestedHighPrice(high)
+                .suggestedDeposit(suggestedDeposit)
+                .caution(caution)
+                .priceReason(priceReason)
+                .depositReason(depositReason)
+                .ruleReason(ruleReason)
+                .decision(decision)
+                .confidence(confidence)
+                .referencePrice(referencePrice)
+                .referenceUrl(referenceUrl)
+                .referenceType(referenceType)
+                .evidenceJson(evidenceJson)
+                .build();
+
+        aiEstimateReportRepository.save(report);
+
         // 8. 결과 반환
         return AiEstimateResponse.builder()
                 .suggestedLowPrice(low)
@@ -145,4 +186,40 @@ public class AIEstimateService {
                 .evidence(evidenceList)
                 .build();
     }
+
+    @Transactional
+    public AiEstimateResponse getEstimateByPostId(Long postId) {
+        AiEstimateReport report = aiEstimateReportRepository.findByPostId(postId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.REPORT_NOT_FOUND));
+
+        // JSON -> List<EvidenceDto> 변환
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<AiEstimateResponse.EvidenceDto> evidenceList = new ArrayList<>();
+        try {
+            evidenceList = objectMapper.readValue(
+                    report.getEvidenceJson(),
+                    new TypeReference<List<AiEstimateResponse.EvidenceDto>>() {}
+            );
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Evidence JSON 역직렬화 실패", e);
+        }
+
+        return AiEstimateResponse.builder()
+                .suggestedLowPrice(report.getSuggestedLowPrice())
+                .suggestedPointPrice(report.getSuggestedPointPrice())
+                .suggestedHighPrice(report.getSuggestedHighPrice())
+                .suggestedDeposit(report.getSuggestedDeposit())
+                .caution(report.getCaution())
+                .priceReason(report.getPriceReason())
+                .depositReason(report.getDepositReason())
+                .ruleReason(report.getRuleReason())
+                .decision(report.getDecision())
+                .confidence(report.getConfidence())
+                .referencePrice(report.getReferencePrice())
+                .referenceUrl(report.getReferenceUrl())
+                .referenceType(report.getReferenceType())
+                .evidence(evidenceList)
+                .build();
+    }
+
 }
