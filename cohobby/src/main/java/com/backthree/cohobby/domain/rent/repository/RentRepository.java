@@ -1,6 +1,7 @@
 package com.backthree.cohobby.domain.rent.repository;
 
 import com.backthree.cohobby.domain.rent.entity.Rent;
+import com.backthree.cohobby.domain.rent.entity.RentStatus;
 import com.backthree.cohobby.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,4 +18,7 @@ public interface RentRepository extends JpaRepository<Rent, Long> {
 
     // borrower로 대여 내역 조회
     List<Rent> findByBorrowerOrderByCreatedAtDesc(User borrower);
+
+    // borrower와 status로 대여 내역 조회
+    List<Rent> findByBorrowerAndStatus(User borrower, RentStatus status);
 }
