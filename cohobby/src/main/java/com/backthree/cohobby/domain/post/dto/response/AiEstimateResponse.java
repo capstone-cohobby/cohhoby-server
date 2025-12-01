@@ -1,8 +1,10 @@
 package com.backthree.cohobby.domain.post.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -28,6 +30,8 @@ public class AiEstimateResponse {
 
     @Getter
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class EvidenceDto {
         private String title;
         private String url;
