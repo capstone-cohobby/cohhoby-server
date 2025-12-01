@@ -4,6 +4,7 @@ import com.backthree.cohobby.domain.like.entity.Like;
 import com.backthree.cohobby.domain.like.repository.LikeRepository;
 import com.backthree.cohobby.domain.post.dto.response.GetPostResponse;
 import com.backthree.cohobby.domain.post.entity.Post;
+import com.backthree.cohobby.domain.post.entity.PostStatus;
 import com.backthree.cohobby.domain.post.repository.PostRepository;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.repository.UserRepository;
@@ -67,15 +68,16 @@ public class LikeService {
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
         List<Like> likes = likeRepository.findByUser(user);
-
-        // Like 엔티티에서 Post를 추출하고, Image 엔티티 로딩 (LAZY 로딩을 위해)
+        
+        // Like 엔티티에서 Post를 추출하고, PUBLISHED 상태인 게시물만 필터링
         List<Post> posts = likes.stream()
                 .map(Like::getPost)
+                .filter(post -> post.getStatus() == PostStatus.PUBLISHED)
                 .collect(Collectors.toList());
-
+        
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
-
+        
         return posts.stream()
                 .map(GetPostResponse::fromEntity)
                 .collect(Collectors.toList());
