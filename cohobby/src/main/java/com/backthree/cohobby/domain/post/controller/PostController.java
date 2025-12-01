@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -185,6 +186,16 @@ public class PostController {
         return BaseResponse.onSuccess(SuccessStatus._OK, response);
     }
 
+    @Operation(summary = "AI 리포트 조회", description = "대여 게시글에서 리포트 조회 시")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "리포트 조회 성공")
+    })
+    @ErrorDocs({ErrorStatus.REPORT_NOT_FOUND})
+    @GetMapping("/ai-estimate/{postId}")
+    public BaseResponse<AiEstimateResponse>getEstimate(@PathVariable Long postId){
+        AiEstimateResponse response = aiService.getEstimateByPostId(postId);
+        return BaseResponse.onSuccess(SuccessStatus._OK, response);
+    }
     /**
      * 현재 로그인한 사용자 ID를 가져옵니다. 로그인하지 않은 경우 null을 반환합니다.
      */
@@ -195,4 +206,6 @@ public class PostController {
         }
         return null;
     }
+
+
 }
