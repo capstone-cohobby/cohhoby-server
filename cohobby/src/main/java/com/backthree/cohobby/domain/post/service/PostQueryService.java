@@ -49,9 +49,12 @@ public class PostQueryService {
                     builder.and(post.hobby.name.eq(query));
                 }
             } else if (type.equals("search")) {
-                builder.and(post.hobby.name.contains(query)
-                        .or(post.goods.contains(query)));
+                // 검색 타입인 경우 상품명(goods)만 검색
+                builder.and(post.goods.contains(query));
             }
+        } else if (type != null && type.equals("search")) {
+            // 검색 타입인데 query가 null이거나 빈 문자열이면 빈 결과 반환
+            builder.and(post.id.eq(-1L)); // 항상 false가 되는 조건
         }
         
         List<Post> postList = postRepository.getPosts(builder);

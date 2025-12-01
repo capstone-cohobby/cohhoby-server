@@ -9,6 +9,7 @@ import com.backthree.cohobby.domain.post.entity.PostStatus;
 import com.backthree.cohobby.domain.post.repository.ImageRepository;
 import com.backthree.cohobby.domain.post.repository.PostRepository;
 import com.backthree.cohobby.domain.user.entity.User;
+import com.backthree.cohobby.domain.user.repository.UserRepository;
 import com.backthree.cohobby.domain.user.service.UserService;
 import com.backthree.cohobby.domain.hobby.service.HobbyService;
 import com.backthree.cohobby.global.exception.GeneralException;
@@ -32,6 +33,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserService userService;
+    private final UserRepository userRepository;
     private final HobbyService hobbyService;
     private final S3Template s3Template;
     private final ImageRepository imageRepository;
@@ -203,6 +205,22 @@ public class PostService {
         // TODO: 작성자 확인 로직 추가 필요시
         
         return GetPostDetailResponse.fromEntity(post);
+    }
+
+    // 내 등록 상품 조회
+    @Transactional(readOnly = true)
+    public List<GetPostResponse> getMyPosts(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+        
+        List<Post> posts = postRepository.findByUserOrderByCreatedAtDesc(user);
+        
+        // Image 엔티티 로딩 (LAZY 로딩을 위해)
+        posts.forEach(post -> post.getImages().size());
+        
+        return posts.stream()
+                .map(GetPostResponse::fromEntity)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     // 확장자 추출 메서드

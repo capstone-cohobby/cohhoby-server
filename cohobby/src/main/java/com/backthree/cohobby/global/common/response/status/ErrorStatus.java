@@ -39,7 +39,10 @@ public enum ErrorStatus implements BaseCode {
     S3_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE5001", "이미지 업로드 중 소버 오류가 발생했습니다."),
 
     //ai 리포트 관련 에러
-    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "AI4041","Ai 리포트를 조회할 수 없습니다.");
+    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "AI4041","Ai 리포트를 조회할 수 없습니다."),
+    // 찜 관련 에러
+    LIKE_ALREADY_EXISTS(HttpStatus.CONFLICT, "LIKE4091", "이미 찜한 게시물입니다."),
+    LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "LIKE4041", "찜한 내역을 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
