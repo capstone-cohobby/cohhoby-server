@@ -1,6 +1,7 @@
 package com.backthree.cohobby.domain.like.service;
 
 import com.backthree.cohobby.domain.like.dto.response.CreateLikeResponse;
+import com.backthree.cohobby.domain.like.dto.response.DeleteLikeResponse;
 import com.backthree.cohobby.domain.like.entity.Like;
 import com.backthree.cohobby.domain.like.repository.LikeRepository;
 import com.backthree.cohobby.domain.post.dto.response.GetPostResponse;
@@ -47,7 +48,7 @@ public class LikeService {
     }
 
     @Transactional
-    public void deleteLike(Long postId, Long userId) {
+    public DeleteLikeResponse deleteLike(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.POST_NOT_FOUND));
         
@@ -58,6 +59,8 @@ public class LikeService {
                 .orElseThrow(() -> new GeneralException(ErrorStatus.LIKE_NOT_FOUND));
         
         likeRepository.delete(like);
+        
+        return DeleteLikeResponse.from(postId);
     }
 
     @Transactional(readOnly = true)

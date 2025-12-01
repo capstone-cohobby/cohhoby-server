@@ -4,6 +4,7 @@ import com.backthree.cohobby.domain.post.dto.request.*;
 import com.backthree.cohobby.domain.post.dto.response.*;
 import com.backthree.cohobby.domain.post.entity.Post;
 import com.backthree.cohobby.domain.like.dto.response.CreateLikeResponse;
+import com.backthree.cohobby.domain.like.dto.response.DeleteLikeResponse;
 import com.backthree.cohobby.domain.like.service.LikeService;
 import com.backthree.cohobby.domain.post.service.AIEstimateService;
 import com.backthree.cohobby.domain.post.service.PostQueryService;
@@ -207,5 +208,20 @@ public class PostController {
     ) {
         CreateLikeResponse payload = likeService.createLike(postId, user.getId());
         return BaseResponse.onSuccess(SuccessStatus._CREATED, payload);
+    }
+
+    @Operation(summary = "게시물 찜 취소", description = "특정 게시물의 찜을 취소합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "찜 취소 성공"),
+    })
+    @ErrorDocs({ErrorStatus.POST_NOT_FOUND, ErrorStatus.USER_NOT_FOUND, ErrorStatus.LIKE_NOT_FOUND})
+    @DeleteMapping("/{postId}/likes")
+    public BaseResponse<DeleteLikeResponse> deleteLike(
+            @Parameter(description = "게시물 ID", example = "1")
+            @PathVariable Long postId,
+            @Parameter(hidden = true) @CurrentUser User user
+    ) {
+        DeleteLikeResponse payload = likeService.deleteLike(postId, user.getId());
+        return BaseResponse.onSuccess(SuccessStatus._OK, payload);
     }
 }
