@@ -114,7 +114,7 @@ public class PostController {
         return BaseResponse.onSuccess(SuccessStatus._OK, payload);
     }
 
-    @Operation(summary = "게시물 조회(검색)", description = "검색어로 게시물을 조회합니다. 취미명 또는 상품명에 검색어가 포함된 게시물을 반환합니다.")
+    @Operation(summary = "게시물 조회(검색)", description = "검색어로 게시물을 조회합니다. 상품명에 검색어가 포함된 게시물을 반환합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "게시물 조회 성공"),
     })
@@ -123,8 +123,7 @@ public class PostController {
             @Parameter(description = "검색어", example = "나이키")
             @RequestParam(required = false) String query
     ) {
-        Long userId = getCurrentUserId();
-        List<Post> posts = postQueryService.getPosts(query, "search", userId);
+        List<Post> posts = postQueryService.getPosts(query, "search", null);
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
         List<GetPostResponse> response = posts.stream()
@@ -142,8 +141,7 @@ public class PostController {
             @Parameter(description = "카테고리 ID", example = "1")
             @PathVariable Long categoryId
     ) {
-        Long userId = getCurrentUserId();
-        List<Post> posts = postQueryService.getPosts(String.valueOf(categoryId), "category", userId);
+        List<Post> posts = postQueryService.getPosts(String.valueOf(categoryId), "category", null);
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
         List<GetPostResponse> response = posts.stream()
@@ -161,8 +159,7 @@ public class PostController {
             @Parameter(description = "취미 ID", example = "1")
             @PathVariable Long hobbyId
     ) {
-        Long userId = getCurrentUserId();
-        List<Post> posts = postQueryService.getPosts(String.valueOf(hobbyId), "hobby", userId);
+        List<Post> posts = postQueryService.getPosts(String.valueOf(hobbyId), "hobby", null);
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
         List<GetPostResponse> response = posts.stream()
@@ -182,6 +179,18 @@ public class PostController {
             @PathVariable Long postId
     ) {
         GetPostDetailResponse response = postService.getPostDetail(postId);
+        return BaseResponse.onSuccess(SuccessStatus._OK, response);
+    }
+
+    @Operation(summary = "내 등록 상품 조회", description = "현재 사용자가 등록한 게시물 목록을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "등록 상품 조회 성공"),
+    })
+    @GetMapping("/my-posts")
+    public BaseResponse<List<GetPostResponse>> getMyPosts(
+            @Parameter(hidden = true) @CurrentUser User user
+    ) {
+        List<GetPostResponse> response = postService.getMyPosts(user.getId());
         return BaseResponse.onSuccess(SuccessStatus._OK, response);
     }
 

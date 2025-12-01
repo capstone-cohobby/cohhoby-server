@@ -1,21 +1,27 @@
 package com.backthree.cohobby.domain.rent.service;
 
 import com.backthree.cohobby.domain.rent.dto.request.UpdateDetailRequest;
+import com.backthree.cohobby.domain.rent.dto.response.MyRentalHistoryResponse;
 import com.backthree.cohobby.domain.rent.dto.response.RentDetailResponse;
 import com.backthree.cohobby.domain.rent.dto.response.UpdateDetailResponse;
 import com.backthree.cohobby.domain.rent.entity.Rent;
 import com.backthree.cohobby.domain.rent.repository.RentRepository;
+import com.backthree.cohobby.domain.user.entity.User;
+import com.backthree.cohobby.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RentService {
 
     private final RentRepository rentRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public RentDetailResponse getDetail(Long roomId, Long userId) {
@@ -69,5 +75,24 @@ public class RentService {
 
         rentRepository.save(rent);
         return UpdateDetailResponse.fromEntity(rent);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyRentalHistoryResponse> getMyRentalHistory(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. userId=" + userId));
+        
+        List<Rent> rents = rentRepository.findByBorrowerOrderByCreatedAtDesc(user);
+        
+        // Image 엔티티 로딩 (LAZY 로딩을 위해)
+        rents.forEach(rent -> {
+            if (rent.getPost() != null && rent.getPost().getImages() != null) {
+                rent.getPost().getImages().size();
+            }
+        });
+        
+        return rents.stream()
+                .map(MyRentalHistoryResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 }
