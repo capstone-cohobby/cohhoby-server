@@ -11,8 +11,12 @@ import com.backthree.cohobby.domain.payment.entity.PaymentMethod;
 import com.backthree.cohobby.domain.payment.entity.PaymentStatus;
 import com.backthree.cohobby.domain.payment.repository.PaymentRepository;
 import com.backthree.cohobby.domain.rent.entity.Rent;
+import com.backthree.cohobby.domain.rent.entity.RentStatus;
 import com.backthree.cohobby.domain.rent.repository.RentRepository;
 import com.backthree.cohobby.domain.user.entity.User;
+import com.backthree.cohobby.domain.user.repository.UserRepository;
+import com.backthree.cohobby.domain.hobby.entity.Hobby;
+import com.backthree.cohobby.domain.hobby.repository.HobbyRepository;
 import com.backthree.cohobby.global.config.payments.PaymentsConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +45,8 @@ import java.util.UUID;
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final RentRepository rentRepository;
+    private final UserRepository userRepository;
+    private final HobbyRepository hobbyRepository;
     private final PaymentsConfig paymentsConfig;
 
     // 결제 의도 생성(DB에 PENDING 상태로 저장
@@ -110,6 +116,11 @@ public class PaymentService {
             log.info("PG사 승인 응답: {}", pgResponse);
             payment.confirmSuccess(request.paymentKey(), LocalDateTime.now(), "TOSS");
 
+            // 결제가 CAPTURED 상태로 변경된 경우 추가 처리
+            if (payment.getStatus() == PaymentStatus.CAPTURED) {
+                handlePaymentCaptured(payment);
+            }
+
         }catch(Exception e){
             //실패 시 Payment 상태 업데이트 + 예외 처리
             log.error("PG사 결제 승인 실패: {}", e.getMessage());
@@ -171,13 +182,52 @@ public class PaymentService {
         }
 
         switch(request.getStatus().toUpperCase()){
-            case "DONE" -> payment.confirmSuccess(request.getPaymentKey(), LocalDateTime.now(), "TOSS_WEBHOOK");
+            case "DONE" -> {
+                payment.confirmSuccess(request.getPaymentKey(), LocalDateTime.now(), "TOSS_WEBHOOK");
+                // 결제가 CAPTURED 상태로 변경된 경우 추가 처리
+                if (payment.getStatus() == PaymentStatus.CAPTURED) {
+                    handlePaymentCaptured(payment);
+                }
+            }
             case "CANCELLED" -> payment.confirmFailure("TOSS_CANCELLED", "토스에서 결제 취소됨");
             case "FAILED" -> payment.confirmFailure("TOSS_FAILED", "토스에서 결제 실패");
             default -> log.warn("결제 도중 예외 상태 전달: {}", request.getStatus());
         }
 
         log.info("Webhook 처리 완료: orderId = {}, status = {}", request.getOrderId(), request.getStatus());
+    }
+
+    // 결제가 CAPTURED 상태일 때 처리하는 로직
+    private void handlePaymentCaptured(Payment payment) {
+        Rent rent = payment.getRent();
+        Integer paymentAmount = payment.getAmountCaptured() != null 
+            ? payment.getAmountCaptured() 
+            : payment.getAmountExpected();
+
+        // 1. Rent 상태를 CONFIRMED로 변경
+        rent.updateStatus(RentStatus.CONFIRMED);
+        rentRepository.save(rent);
+
+        // 2. borrower와 owner의 score 증가
+        User borrower = userRepository.findById(rent.getBorrower().getId())
+            .orElseThrow(() -> new IllegalArgumentException("대여자 정보를 찾을 수 없습니다."));
+        User owner = userRepository.findById(rent.getOwner().getId())
+            .orElseThrow(() -> new IllegalArgumentException("대여주인 정보를 찾을 수 없습니다."));
+
+        borrower.addScore(paymentAmount);
+        owner.addScore(paymentAmount);
+        userRepository.save(borrower);
+        userRepository.save(owner);
+
+        // 3. Rent의 Post의 Hobby에도 결제 금액만큼 score 증가
+        var hobby = hobbyRepository.findById(rent.getPost().getHobby().getId())
+            .orElseThrow(() -> new IllegalArgumentException("취미 정보를 찾을 수 없습니다."));
+
+        hobby.addScore(paymentAmount);
+        hobbyRepository.save(hobby);
+
+        log.info("결제 완료 처리: Rent ID={}, 결제 금액={}, 대여자 score={}, 대여주인 score={}, 취미 score={}", 
+            rent.getId(), paymentAmount, borrower.getScore(), owner.getScore(), hobby.getScore());
     }
 
     //개별 결제 조회

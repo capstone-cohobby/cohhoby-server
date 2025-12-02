@@ -87,6 +87,10 @@ public class Rent extends BaseTimeEntity {
         this.totalPrice = totalPrice;
     }
 
+    public void updateStatus(RentStatus status) {
+        this.status = status;
+    }
+
     // totalPrice 계산 및 업데이트
     public void calculateAndUpdateTotalPrice() {
         if (this.dailyPrice != null && this.startAt != null && this.duedate != null) {
