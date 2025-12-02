@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -96,17 +95,19 @@ public class ChattingService {
         Post post = postRepository.findById(postId).orElseThrow();
         //post에 있는 user 가져오기
         User owner = post.getUser();
-        Long ownerId = owner.getId();
         // 필요 시 중복 구분용 suffix 예: + " #" + System.currentTimeMillis()
         String roomName = owner.getNickname() + " & " + borrower.getNickname();
 
         // Rent를 먼저 생성 (ChattingRoom의 rent_id가 NOT NULL이므로)
+        Integer deposit = post.getDeposit() != null ? post.getDeposit() : 0;
+
         Rent.RentBuilder rentBuilder = Rent.builder()
                 .post(post)
                 .owner(owner)
                 .borrower(borrower)
                 .status(RentStatus.CREATED)
                 .dailyPrice(post.getDailyPrice()) // Post의 일일 대여료를 Rent에 반영
+                .deposit(deposit) // Post의 보증금을 Rent에 반영 (없으면 0원)
                 .rule(post.getCaution()); // Post의 caution을 Rent의 rule로 설정
 
         // 날짜 정보가 있으면 설정
@@ -132,9 +133,10 @@ public class ChattingService {
         // totalPrice가 계산되지 않은 경우에만 프론트엔드에서 전달받은 값 사용
         if (rent.getTotalPrice() == null && totalPrice != null) {
             rent.updateTotalPrice(totalPrice);
-            rent = rentRepository.save(rent);
-        } else if (rent.getTotalPrice() != null) {
-            // 계산된 totalPrice로 업데이트
+        }
+        
+        // 변경사항이 있으면 저장
+        if (rent.getTotalPrice() != null) {
             rent = rentRepository.save(rent);
         }
 
@@ -146,10 +148,6 @@ public class ChattingService {
                 .name(roomName)
                 .rent(rent)  // Rent를 포함해서 저장
                 .build());
-
-        // 생성한 rent를 room에 설정하고 저장
-        room.setRent(rent);
-        chattingRoomRepository.save(room);
 
         return ChattingRoomDto.builder()
                 .id(room.getId())

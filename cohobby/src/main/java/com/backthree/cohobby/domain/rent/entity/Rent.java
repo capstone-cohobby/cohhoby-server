@@ -38,6 +38,8 @@ public class Rent extends BaseTimeEntity {
 
     private Integer dailyPrice;
 
+    private Integer deposit; // 보증금
+
     @Column(length = 3)
     private String currency;
 
@@ -85,6 +87,10 @@ public class Rent extends BaseTimeEntity {
 
     public void updateTotalPrice(Integer totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public void updateDeposit(Integer deposit) {
+        this.deposit = deposit != null ? deposit : 0;
     }
 
     public void updateStatus(RentStatus status) {
