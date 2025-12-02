@@ -20,5 +20,7 @@ public class PaymentsConfig {
         private String secretKey;
         private String securityKey;
         private String confirmUrl;
+        private String billingAuthUrl; // 빌링키 발급 URL
+        private String billingPayUrl; // 자동결제 URL
     }
 }

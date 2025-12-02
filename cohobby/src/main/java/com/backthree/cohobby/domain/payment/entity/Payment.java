@@ -29,6 +29,9 @@ public class Payment extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
+    @Enumerated(EnumType.STRING)
+    private PaymentType paymentType; // RENTAL_FEE(대여료) 또는 DEPOSIT(보증금)
+
     private Integer amountExpected;
     private Integer amountCaptured;
     private Integer amountAuthorized;
@@ -44,6 +47,8 @@ public class Payment extends BaseTimeEntity {
     private LocalDateTime canceledAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private boolean autoBilling;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rentId", nullable = false)
@@ -61,7 +66,7 @@ public class Payment extends BaseTimeEntity {
     }
 
     // 결제 승인 완료 처리
-    public void confirmSuccess(String pgPaymentKey, LocalDateTime capturedAt, String provider) {
+    public void confirmSuccess(String pgPaymentKey, LocalDateTime capturedAt, String provider, boolean autoBilling) {
         this.status = PaymentStatus.CAPTURED;
         this.pgPaymentKey = pgPaymentKey;
         this.amountCaptured = this.amountExpected;
@@ -70,6 +75,7 @@ public class Payment extends BaseTimeEntity {
         this.provider = provider;
         this.failureCode = null;
         this.failureMessage = null;
+        this.autoBilling = autoBilling;
     }
 
     // 결제 실패 처리

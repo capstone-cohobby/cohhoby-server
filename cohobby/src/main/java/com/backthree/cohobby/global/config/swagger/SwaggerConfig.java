@@ -14,7 +14,6 @@ import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Map;
 
 @Configuration
 @OpenAPIDefinition(
@@ -23,16 +22,20 @@ import java.util.Map;
         })
 public class SwaggerConfig {
     @Bean
+    @SuppressWarnings("unchecked")
     public OpenAPI cohobbyApi() {
         //에러 응답 DTO 스키마 추가 - 기존 SchemaCustomizer 대신 사용
-        Schema<?> errorResponseSchema = new Schema<>()
+        Schema<Object> isSuccessSchema = new Schema<Object>().type("boolean").example(false);
+        Schema<Object> codeSchema = new Schema<Object>().type("string").example("ERROR_CODE");
+        Schema<Object> messageSchema = new Schema<Object>().type("string").example("에러 메시지");
+        Schema<Object> resultSchema = new Schema<Object>().type("object").nullable(true).example(null);
+        
+        Schema<Object> errorResponseSchema = new Schema<Object>()
                 .type("object")
-                .properties(Map.of(
-                        "isSuccess", new Schema<>().type("boolean").example(false),
-                        "code", new Schema<>().type("string").example("ERROR_CODE"),
-                        "message", new Schema<>().type("string").example("에러 메시지"),
-                        "result", new Schema<>().type("object").nullable(true).example(null)
-                ));
+                .addProperty("isSuccess", isSuccessSchema)
+                .addProperty("code", codeSchema)
+                .addProperty("message", messageSchema)
+                .addProperty("result", resultSchema);
 
         //기존 authSetting 컴포넌트 설정에 스키마 추가
         Components components = authSetting()

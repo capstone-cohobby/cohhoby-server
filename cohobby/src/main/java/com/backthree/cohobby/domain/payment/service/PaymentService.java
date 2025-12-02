@@ -9,29 +9,31 @@ import com.backthree.cohobby.domain.payment.dto.response.PaymentConfirmResponse;
 import com.backthree.cohobby.domain.payment.entity.Payment;
 import com.backthree.cohobby.domain.payment.entity.PaymentMethod;
 import com.backthree.cohobby.domain.payment.entity.PaymentStatus;
+import com.backthree.cohobby.domain.payment.entity.PaymentType;
+import com.backthree.cohobby.domain.payment.entity.UserCard;
 import com.backthree.cohobby.domain.payment.repository.PaymentRepository;
+import com.backthree.cohobby.domain.payment.repository.UserCardRepository;
 import com.backthree.cohobby.domain.rent.entity.Rent;
 import com.backthree.cohobby.domain.rent.entity.RentStatus;
 import com.backthree.cohobby.domain.rent.repository.RentRepository;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.repository.UserRepository;
-import com.backthree.cohobby.domain.hobby.entity.Hobby;
 import com.backthree.cohobby.domain.hobby.repository.HobbyRepository;
 import com.backthree.cohobby.global.config.payments.PaymentsConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Collections;
@@ -47,7 +49,10 @@ public class PaymentService {
     private final RentRepository rentRepository;
     private final UserRepository userRepository;
     private final HobbyRepository hobbyRepository;
+    private final UserCardRepository userCardRepository;
     private final PaymentsConfig paymentsConfig;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // 결제 의도 생성(DB에 PENDING 상태로 저장
     public PaymentIntentResponse createPaymentIntent(PaymentIntentRequest request, User user) {
@@ -56,6 +61,14 @@ public class PaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대여입니다."));
         if(!rent.getTotalPrice().equals(request.amount())){ //Rent 대여 금액과 결제 금액 비교
             throw new IllegalArgumentException("결제 요청 금액이 대여 금액과 일치하지 않습니다.");
+        }
+
+        // 대여료 결제 시 카드 등록 여부 확인 (borrower가 결제하는 경우)
+        if (rent.getBorrower().getId().equals(user.getId())) {
+            boolean hasCard = userCardRepository.findByUser(user).isPresent();
+            if (!hasCard) {
+                throw new IllegalArgumentException("대여료 결제를 위해 카드 등록이 필요합니다. 마이페이지에서 카드를 등록해주세요.");
+            }
         }
 
         //구매상품 가져오기
@@ -71,7 +84,9 @@ public class PaymentService {
                 .orderName(orderName)
                 .pgOrderNo(pgOrderNo)
                 .status(PaymentStatus.PENDING)
+                .paymentType(PaymentType.RENTAL_FEE) // 대여료로 설정
                 .createdAt(LocalDateTime.now())
+                .autoBilling(false) // 일반 결제는 자동결제 아님
                 .build();
         paymentRepository.save(payment);
 
@@ -90,31 +105,27 @@ public class PaymentService {
         }
 
         //PG사 결제 승인 API 호출
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = createAuthHeaders();
-
-        //PG사에 보낼 요청 본문 생성
-        Map<String, Object> body = Map.of(
-                "paymentKey", request.paymentKey(),
-                "orderId", request.orderId(),
-                "amount", request.amount()
-        );
+        // TODO: 프론트 구현으로 sdk 연결 이후에 실제 테스트 가능하도록 주석 해제
+        // HttpHeaders headers = createAuthHeaders();
+        // Map<String, Object> body = Map.of(
+        //         "paymentKey", request.paymentKey(),
+        //         "orderId", request.orderId(),
+        //         "amount", request.amount()
+        // );
+        // String pgResponse = restTemplate.postForObject(
+        //         paymentsConfig.getToss().getConfirmUrl(),
+        //         new HttpEntity<>(body, headers),
+        //         String.class
+        // );
 
         try{
-            //PG사에 승인 요청 보내기(pg사의 결제승인 api 호출)
-            /*  프론트 구현으로 sdk 연결 이후에 실제 테스트 가능
-            String pgResponse = restTemplate.postForObject(
-                    paymentsConfig.getToss().getConfirmUrl(),
-                    new HttpEntity<>(body, headers),
-                    String.class
-            );
-            */
+            // 임시 응답 (실제 API 연동 전까지 사용)
             String pgResponse = "{ \"status\": \"DONE\", \"approvedAt\": \"2025-10-07T10:00:00\" }";
 
 
             //성공 시 Payment 상태 업데이트
             log.info("PG사 승인 응답: {}", pgResponse);
-            payment.confirmSuccess(request.paymentKey(), LocalDateTime.now(), "TOSS");
+            payment.confirmSuccess(request.paymentKey(), LocalDateTime.now(), "TOSS", payment.isAutoBilling());
 
             // 결제가 CAPTURED 상태로 변경된 경우 추가 처리
             if (payment.getStatus() == PaymentStatus.CAPTURED) {
@@ -183,7 +194,7 @@ public class PaymentService {
 
         switch(request.getStatus().toUpperCase()){
             case "DONE" -> {
-                payment.confirmSuccess(request.getPaymentKey(), LocalDateTime.now(), "TOSS_WEBHOOK");
+                payment.confirmSuccess(request.getPaymentKey(), LocalDateTime.now(), "TOSS_WEBHOOK", payment.isAutoBilling());
                 // 결제가 CAPTURED 상태로 변경된 경우 추가 처리
                 if (payment.getStatus() == PaymentStatus.CAPTURED) {
                     handlePaymentCaptured(payment);
@@ -237,5 +248,155 @@ public class PaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("해당 결제 정보를 찾을 수 없습니다: " + paymentId));
 
         return PaymentDetailResponse.from(payment, user);
+    }
+
+    // 보증금 자동결제 (빌링키 사용)
+    public Payment processDepositAutoPayment(Rent rent) {
+        // 대여자(borrower)의 카드 정보 조회
+        User borrower = rent.getBorrower();
+        UserCard userCard = userCardRepository.findByUser(borrower)
+                .orElseThrow(() -> new IllegalArgumentException("등록된 카드가 없습니다. userId: " + borrower.getId()));
+
+        // 보증금이 없으면 예외
+        if (rent.getDeposit() == null || rent.getDeposit() <= 0) {
+            throw new IllegalArgumentException("보증금이 설정되지 않았습니다. rentId: " + rent.getId());
+        }
+
+        // 주문번호 생성
+        String pgOrderNo = "cohobby-deposit-" + UUID.randomUUID().toString();
+        String orderName = rent.getPost().getGoods() + " - 보증금";
+
+        // Payment 엔티티 생성 (PENDING 상태)
+        Payment payment = Payment.builder()
+                .rent(rent)
+                .method(PaymentMethod.CARD)
+                .amountExpected(rent.getDeposit())
+                .currency("KRW")
+                .orderName(orderName)
+                .pgOrderNo(pgOrderNo)
+                .status(PaymentStatus.PENDING)
+                .paymentType(PaymentType.DEPOSIT) // 보증금으로 설정
+                .autoBilling(true) // 자동결제로 설정
+                .createdAt(LocalDateTime.now())
+                .build();
+        paymentRepository.save(payment);
+
+        // 토스페이먼츠 자동결제 API 호출
+        HttpHeaders headers = createAuthHeaders();
+        Map<String, Object> body = Map.of(
+                "customerKey", "customer_" + borrower.getId(), // 고객 키
+                "amount", rent.getDeposit(),
+                "orderId", pgOrderNo,
+                "orderName", orderName
+        );
+
+        try {
+            String url = paymentsConfig.getToss().getBillingPayUrl() + "/" + userCard.getBillingKey();
+            String response = restTemplate.postForObject(
+                    url,
+                    new HttpEntity<>(body, headers),
+                    String.class
+            );
+
+            // 응답 파싱
+            JsonNode jsonNode = objectMapper.readTree(response);
+            String paymentKey = jsonNode.get("paymentKey").asText();
+            String status = jsonNode.get("status").asText();
+
+            if ("DONE".equals(status)) {
+                payment.confirmSuccess(paymentKey, LocalDateTime.now(), "TOSS", true);
+                // 결제가 CAPTURED 상태로 변경된 경우 추가 처리
+                if (payment.getStatus() == PaymentStatus.CAPTURED) {
+                    handlePaymentCaptured(payment);
+                }
+                log.info("보증금 자동결제 완료: rentId={}, paymentId={}, amount={}", 
+                        rent.getId(), payment.getId(), rent.getDeposit());
+            } else {
+                payment.confirmFailure("AUTO_PAYMENT_FAILED", "자동결제 실패: " + status);
+                log.error("보증금 자동결제 실패: rentId={}, status={}", rent.getId(), status);
+            }
+
+        } catch (Exception e) {
+            payment.confirmFailure("AUTO_PAYMENT_ERROR", e.getMessage());
+            log.error("보증금 자동결제 오류: rentId={}, error={}", rent.getId(), e.getMessage());
+            throw new RuntimeException("보증금 자동결제에 실패했습니다: " + e.getMessage());
+        }
+
+        return payment;
+    }
+
+    // 대여료 자동결제 (빌링키 사용)
+    public Payment processRentalFeeAutoPayment(Rent rent) {
+        // 대여자(borrower)의 카드 정보 조회
+        User borrower = rent.getBorrower();
+        UserCard userCard = userCardRepository.findByUser(borrower)
+                .orElseThrow(() -> new IllegalArgumentException("등록된 카드가 없습니다. userId: " + borrower.getId()));
+
+        // 대여료가 없으면 예외
+        if (rent.getTotalPrice() == null || rent.getTotalPrice() <= 0) {
+            throw new IllegalArgumentException("대여료가 설정되지 않았습니다. rentId: " + rent.getId());
+        }
+
+        // 주문번호 생성
+        String pgOrderNo = "cohobby-rental-" + UUID.randomUUID().toString();
+        String orderName = rent.getPost().getGoods() + " - 대여료";
+
+        // Payment 엔티티 생성 (PENDING 상태)
+        Payment payment = Payment.builder()
+                .rent(rent)
+                .method(PaymentMethod.CARD)
+                .amountExpected(rent.getTotalPrice())
+                .currency("KRW")
+                .orderName(orderName)
+                .pgOrderNo(pgOrderNo)
+                .status(PaymentStatus.PENDING)
+                .paymentType(PaymentType.RENTAL_FEE) // 대여료로 설정
+                .autoBilling(true) // 자동결제로 설정
+                .createdAt(LocalDateTime.now())
+                .build();
+        paymentRepository.save(payment);
+
+        // 토스페이먼츠 자동결제 API 호출
+        HttpHeaders headers = createAuthHeaders();
+        Map<String, Object> body = Map.of(
+                "customerKey", "customer_" + borrower.getId(), // 고객 키
+                "amount", rent.getTotalPrice(),
+                "orderId", pgOrderNo,
+                "orderName", orderName
+        );
+
+        try {
+            String url = paymentsConfig.getToss().getBillingPayUrl() + "/" + userCard.getBillingKey();
+            String response = restTemplate.postForObject(
+                    url,
+                    new HttpEntity<>(body, headers),
+                    String.class
+            );
+
+            // 응답 파싱
+            JsonNode jsonNode = objectMapper.readTree(response);
+            String paymentKey = jsonNode.get("paymentKey").asText();
+            String status = jsonNode.get("status").asText();
+
+            if ("DONE".equals(status)) {
+                payment.confirmSuccess(paymentKey, LocalDateTime.now(), "TOSS", true);
+                // 결제가 CAPTURED 상태로 변경된 경우 추가 처리
+                if (payment.getStatus() == PaymentStatus.CAPTURED) {
+                    handlePaymentCaptured(payment);
+                }
+                log.info("대여료 자동결제 완료: rentId={}, paymentId={}, amount={}",
+                        rent.getId(), payment.getId(), rent.getTotalPrice());
+            } else {
+                payment.confirmFailure("AUTO_PAYMENT_FAILED", "자동결제 실패: " + status);
+                log.error("대여료 자동결제 실패: rentId={}, status={}", rent.getId(), status);
+            }
+
+        } catch (Exception e) {
+            payment.confirmFailure("AUTO_PAYMENT_ERROR", e.getMessage());
+            log.error("대여료 자동결제 오류: rentId={}, error={}", rent.getId(), e.getMessage());
+            throw new RuntimeException("대여료 자동결제에 실패했습니다: " + e.getMessage());
+        }
+
+        return payment;
     }
 }
