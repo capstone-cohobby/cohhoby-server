@@ -213,7 +213,8 @@ public class PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
         
-        List<Post> posts = postRepository.findByUserOrderByCreatedAtDesc(user);
+        // PUBLISHED 상태인 게시물만 조회
+        List<Post> posts = postRepository.findByUserAndStatusOrderByCreatedAtDesc(user, PostStatus.PUBLISHED);
         
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
