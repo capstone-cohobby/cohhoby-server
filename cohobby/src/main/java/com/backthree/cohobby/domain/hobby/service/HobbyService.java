@@ -41,15 +41,15 @@ public class HobbyService {
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
         // 총 경험치: user의 score
-        Integer totalExperience = user.getScore();
+        Integer totalExperience = user.getScore() != null ? user.getScore() : 0;
 
-        // 대여한 물품 개수: userId가 borrower인 rent 중 status가 COMPLETED인 개수
-        List<Rent> completedRents = rentRepository.findByBorrowerAndStatus(user, RentStatus.COMPLETED);
-        Integer totalRentedItems = completedRents.size();
+        // 대여한 물품 개수: borrower가 나이고 CREATED가 아닌 rent의 개수
+        List<Rent> nonCreatedRents = rentRepository.findByBorrowerAndStatusNot(user, RentStatus.CREATED);
+        Integer totalRentedItems = nonCreatedRents.size();
 
-        // 기여한 취미: rent에서 post를 보고, 해당 hobby를 집합으로 했을 때 개수 (COMPLETED인 것만)
+        // 기여한 취미: 위 조건을 만족하는 rent의 hobby 집합(중복 제거)의 개수
         // LAZY 로딩을 위해 post와 hobby를 미리 로드
-        Set<Long> contributedHobbyIds = completedRents.stream()
+        Set<Long> contributedHobbyIds = nonCreatedRents.stream()
                 .map(rent -> {
                     // Post와 Hobby 엔티티 로딩 (LAZY 로딩을 위해)
                     rent.getPost().getHobby().getId();

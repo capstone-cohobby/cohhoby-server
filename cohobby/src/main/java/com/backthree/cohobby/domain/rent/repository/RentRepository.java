@@ -21,4 +21,7 @@ public interface RentRepository extends JpaRepository<Rent, Long> {
 
     // borrower와 status로 대여 내역 조회
     List<Rent> findByBorrowerAndStatus(User borrower, RentStatus status);
+
+    // borrower가 나이고 CREATED가 아닌 대여 내역 조회
+    List<Rent> findByBorrowerAndStatusNot(User borrower, RentStatus status);
 }

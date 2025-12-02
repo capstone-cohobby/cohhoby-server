@@ -113,4 +113,12 @@ public class User extends BaseTimeEntity implements UserDetails {
     public void withdraw(){
         this.isBanned = true;
     }
+
+    // score 증가
+    public void addScore(Integer amount) {
+        if (this.score == null) {
+            this.score = 0;
+        }
+        this.score += amount;
+    }
 }

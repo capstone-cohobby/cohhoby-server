@@ -106,7 +106,8 @@ public class ChattingService {
                 .owner(owner)
                 .borrower(borrower)
                 .status(RentStatus.CREATED)
-                .dailyPrice(post.getDailyPrice()); // Post의 일일 대여료를 Rent에 반영
+                .dailyPrice(post.getDailyPrice()) // Post의 일일 대여료를 Rent에 반영
+                .rule(post.getCaution()); // Post의 caution을 Rent의 rule로 설정
 
         // 날짜 정보가 있으면 설정
         if (startDate != null && endDate != null) {
