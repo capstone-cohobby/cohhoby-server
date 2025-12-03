@@ -26,7 +26,8 @@ public class DepositAutoPaymentScheduler {
     private final PaymentService paymentService;
 
     // 매일 자정에 실행 (대여 종료일이 오늘인 대여의 보증금 자동결제)
-    @Scheduled(cron = "0 0 0 * * *") // 매일 00:00:00에 실행
+    // 주석 처리: 신고 시스템 도입으로 인해 관리자 승인 시 자동결제로 변경됨
+    // @Scheduled(cron = "0 0 0 * * *") // 매일 00:00:00에 실행
     @Transactional
     public void processDepositAutoPayments() {
         LocalDate today = LocalDate.now();

@@ -56,6 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/docs/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // Swagger UI는 인증 필요
                         .requestMatchers("/ws-stomp/**").permitAll() // WebSocket 핸드셰이크 허용 (실제 인증은 STOMP CONNECT에서 처리)
                         .requestMatchers("/auth/signup-extra").authenticated() //추가 정보 api는 인증 필요
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // 관리자 전용 API
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

@@ -1,6 +1,7 @@
 package com.backthree.cohobby.domain.user.service;
 
 import com.backthree.cohobby.domain.user.dto.KakaoUserInfo;
+import com.backthree.cohobby.domain.user.entity.Role;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +60,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                                         .profilePicture(userInfo.getProfileDTO().getProfileImageUrl())
                                         .score(0)
                                         .isBanned(false)
+                                        .role(Role.USER)  // 기본값은 USER
                                         .birthYear(null)  // 초기 가입 시에는 생년월일 정보 없음 (나중에 추가 정보 입력)
                                         .birthday(null)   // 초기 가입 시에는 생년월일 정보 없음
                                         .gender(null)     // 초기 가입 시에는 성별 정보 없음
