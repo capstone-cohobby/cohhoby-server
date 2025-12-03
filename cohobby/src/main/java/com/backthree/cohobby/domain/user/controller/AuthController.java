@@ -3,11 +3,13 @@ package com.backthree.cohobby.domain.user.controller;
 import com.backthree.cohobby.domain.user.dto.TokenDTO;
 import com.backthree.cohobby.domain.user.dto.TokenRefreshRequestDTO;
 import com.backthree.cohobby.domain.user.dto.UserResponseDTO;
+import com.backthree.cohobby.domain.user.dto.request.AdminLoginRequest;
 import com.backthree.cohobby.domain.user.dto.request.TestLoginRequest;
 import com.backthree.cohobby.domain.user.dto.request.TestSignupRequest;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.repository.RefreshTokenRepository;
 import com.backthree.cohobby.domain.user.repository.UserRepository;
+import com.backthree.cohobby.domain.user.service.AdminAuthService;
 import com.backthree.cohobby.domain.user.service.TestAuthService;
 import com.backthree.cohobby.global.annotation.CurrentUser;
 import com.backthree.cohobby.global.config.security.JwtService;
@@ -27,6 +29,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TestAuthService testAuthService;
+    private final AdminAuthService adminAuthService;
 
     /*@PostMapping("/signup-extra")
     public ResponseEntity<String> handleForm(@RequestBody SignupExtraDTO dto,
@@ -90,6 +93,13 @@ public class AuthController {
     @PostMapping("/test/login")
     public ResponseEntity<TokenDTO> testLogin(@RequestBody TestLoginRequest request) {
         TokenDTO tokenDTO = testAuthService.login(request);
+        return ResponseEntity.ok(tokenDTO);
+    }
+
+    // 관리자 로그인
+    @PostMapping("/admin/login")
+    public ResponseEntity<TokenDTO> adminLogin(@RequestBody AdminLoginRequest request) {
+        TokenDTO tokenDTO = adminAuthService.adminLogin(request);
         return ResponseEntity.ok(tokenDTO);
     }
 
