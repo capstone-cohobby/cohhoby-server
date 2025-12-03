@@ -24,8 +24,10 @@ public class Report extends BaseTimeEntity {
     private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 50)
     private ReportStatus status; // ENUM → String
     @Enumerated(EnumType.STRING)
+    @Column(length = 50)
     private ReportType type;   // ENUM → String
 
     @Column(name = "image_url", length = 127)
@@ -39,4 +41,11 @@ public class Report extends BaseTimeEntity {
     @JoinColumn(name = "userId", nullable = false)
     private User user;
 
+    // 반납 연체일수 (반납 연체 신고 시 사용)
+    private Integer delayDays;
+
+    // 상태 업데이트 메서드
+    public void updateStatus(ReportStatus status) {
+        this.status = status;
+    }
 }

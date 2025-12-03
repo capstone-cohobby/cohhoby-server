@@ -54,6 +54,11 @@ public class User extends BaseTimeEntity implements UserDetails {
     @Column(nullable = false, unique = true)
     private String providerId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Role role = Role.USER; // 기본값은 USER
+
     @OneToMany(mappedBy = "owner")
     private List<Rent> rentsOwned = new ArrayList<>();
 
@@ -70,8 +75,16 @@ public class User extends BaseTimeEntity implements UserDetails {
     //userdetails 인터페이스 구현 메소드 오버라이드
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        //모든 사용자를 "role_user" 권한으로 통일
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        // Role에 따라 권한 반환
+        if (this.role == null) {
+            return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        }
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
+    }
+
+    // 관리자 여부 확인
+    public boolean isAdmin() {
+        return this.role == Role.ADMIN;
     }
 
     @Override

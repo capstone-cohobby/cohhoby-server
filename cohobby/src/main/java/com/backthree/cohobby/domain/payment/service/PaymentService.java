@@ -399,4 +399,138 @@ public class PaymentService {
 
         return payment;
     }
+
+    // 신고 기반 자동결제 (관리자 승인 시 실행)
+    public Payment processReportAutoPayment(com.backthree.cohobby.domain.report.entity.Report report) {
+        Rent rent = report.getRent();
+        User borrower = rent.getBorrower();
+        UserCard userCard = userCardRepository.findByUser(borrower)
+                .orElseThrow(() -> new IllegalArgumentException("등록된 카드가 없습니다. userId: " + borrower.getId()));
+
+        // 신고 유형에 따른 결제 금액 계산
+        Integer paymentAmount = calculateReportPaymentAmount(report, rent);
+        
+        if (paymentAmount == null || paymentAmount <= 0) {
+            throw new IllegalArgumentException("결제 금액이 올바르지 않습니다. reportId: " + report.getId());
+        }
+
+        // 주문번호 생성
+        String pgOrderNo = "cohobby-report-" + UUID.randomUUID().toString();
+        String orderName = rent.getPost().getGoods() + " - " + getReportTypeName(report.getType());
+
+        // Payment 엔티티 생성 (PENDING 상태)
+        Payment payment = Payment.builder()
+                .rent(rent)
+                .method(PaymentMethod.CARD)
+                .amountExpected(paymentAmount)
+                .currency("KRW")
+                .orderName(orderName)
+                .pgOrderNo(pgOrderNo)
+                .status(PaymentStatus.PENDING)
+                .paymentType(PaymentType.DEPOSIT) // 보증금으로 설정
+                .autoBilling(true) // 자동결제로 설정
+                .createdAt(LocalDateTime.now())
+                .build();
+        paymentRepository.save(payment);
+
+        // 토스페이먼츠 자동결제 API 호출
+        HttpHeaders headers = createAuthHeaders();
+        Map<String, Object> body = Map.of(
+                "customerKey", "customer_" + borrower.getId(), // 고객 키
+                "amount", paymentAmount,
+                "orderId", pgOrderNo,
+                "orderName", orderName
+        );
+
+        try {
+            String url = paymentsConfig.getToss().getBillingPayUrl() + "/" + userCard.getBillingKey();
+            String response = restTemplate.postForObject(
+                    url,
+                    new HttpEntity<>(body, headers),
+                    String.class
+            );
+
+            // 응답 파싱
+            JsonNode jsonNode = objectMapper.readTree(response);
+            String paymentKey = jsonNode.get("paymentKey").asText();
+            String status = jsonNode.get("status").asText();
+
+            if ("DONE".equals(status)) {
+                payment.confirmSuccess(paymentKey, LocalDateTime.now(), "TOSS", true);
+                // 결제가 CAPTURED 상태로 변경된 경우 추가 처리
+                if (payment.getStatus() == PaymentStatus.CAPTURED) {
+                    handlePaymentCaptured(payment);
+                }
+                log.info("신고 기반 자동결제 완료: reportId={}, rentId={}, paymentId={}, amount={}, type={}", 
+                        report.getId(), rent.getId(), payment.getId(), paymentAmount, report.getType());
+            } else {
+                payment.confirmFailure("AUTO_PAYMENT_FAILED", "자동결제 실패: " + status);
+                log.error("신고 기반 자동결제 실패: reportId={}, rentId={}, status={}", report.getId(), rent.getId(), status);
+            }
+
+        } catch (Exception e) {
+            payment.confirmFailure("AUTO_PAYMENT_ERROR", e.getMessage());
+            log.error("신고 기반 자동결제 오류: reportId={}, rentId={}, error={}", report.getId(), rent.getId(), e.getMessage());
+            throw new RuntimeException("신고 기반 자동결제에 실패했습니다: " + e.getMessage());
+        }
+
+        return payment;
+    }
+
+    // 신고 유형에 따른 결제 금액 계산
+    private Integer calculateReportPaymentAmount(com.backthree.cohobby.domain.report.entity.Report report, Rent rent) {
+        com.backthree.cohobby.domain.report.entity.ReportType reportType = report.getType();
+        
+        switch (reportType) {
+            case MINOR_DAMAGE:
+                // 경미파손: 보증금의 50%
+                if (rent.getDeposit() == null || rent.getDeposit() <= 0) {
+                    throw new IllegalArgumentException("보증금이 설정되지 않았습니다.");
+                }
+                return (int) (rent.getDeposit() * 0.5);
+                
+            case DAMAGE:
+                // 파손: 보증금의 100%
+                if (rent.getDeposit() == null || rent.getDeposit() <= 0) {
+                    throw new IllegalArgumentException("보증금이 설정되지 않았습니다.");
+                }
+                return rent.getDeposit();
+                
+            case RETURN_DELAY:
+                // 반납 연체: 일일대여료 * 연체일수
+                if (rent.getDailyPrice() == null || rent.getDailyPrice() <= 0) {
+                    throw new IllegalArgumentException("일일 대여료가 설정되지 않았습니다.");
+                }
+                if (report.getDelayDays() == null || report.getDelayDays() <= 0) {
+                    throw new IllegalArgumentException("연체일수가 올바르지 않습니다.");
+                }
+                return rent.getDailyPrice() * report.getDelayDays();
+                
+            case OTHER:
+                // 기타: 보증금의 100%
+                if (rent.getDeposit() == null || rent.getDeposit() <= 0) {
+                    throw new IllegalArgumentException("보증금이 설정되지 않았습니다.");
+                }
+                return rent.getDeposit();
+                
+            default:
+                throw new IllegalArgumentException("자동결제가 필요한 신고 유형이 아닙니다: " + reportType);
+        }
+    }
+
+    // 신고 유형 한글 이름 반환
+    private String getReportTypeName(com.backthree.cohobby.domain.report.entity.ReportType type) {
+        switch (type) {
+            case MINOR_DAMAGE:
+                return "경미파손 보증금";
+            case DAMAGE:
+                return "파손 보증금";
+            case RETURN_DELAY:
+                return "반납 연체 보증금";
+            case OTHER:
+                return "기타 보증금";
+            default:
+                return "보증금";
+        }
+    }
 }
