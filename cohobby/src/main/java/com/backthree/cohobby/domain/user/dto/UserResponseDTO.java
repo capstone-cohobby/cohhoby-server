@@ -19,6 +19,7 @@ public class UserResponseDTO {
     private Integer birthYear;
     private LocalDate birthday;
     private String phoneNumber;
+    private String role;
     private LocalDateTime createdAt;
 
     public static UserResponseDTO from(User user) {
@@ -32,6 +33,7 @@ public class UserResponseDTO {
                 .birthYear(user.getBirthYear())
                 .birthday(user.getBirthday())
                 .phoneNumber(user.getPhoneNumber())
+                .role(user.getRole() != null ? user.getRole().name() : "USER")
                 .createdAt(user.getCreatedAt())
                 .build();
     }
