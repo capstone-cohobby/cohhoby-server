@@ -4,8 +4,12 @@ import com.backthree.cohobby.domain.report.entity.ReportType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -26,8 +30,9 @@ public class CreateReportRequest {
     @NotBlank(message = "신고 내용은 필수 입력 값입니다.")
     private String content;
 
-    @Schema(description = "이미지 URL", example = "https://example.com/image.jpg")
-    private String imageUrl;
+    @Schema(description = "이미지 파일 목록 (S3 업로드, 최대 5개)")
+    @Size(max = 5, message = "이미지는 최대 5개까지 업로드할 수 있습니다.")
+    private List<MultipartFile> images;
 
     @Schema(description = "연체일수 (반납 연체 신고 시 필수)", example = "3")
     private Integer delayDays;

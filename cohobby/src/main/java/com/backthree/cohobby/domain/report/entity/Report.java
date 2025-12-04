@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -30,8 +32,11 @@ public class Report extends BaseTimeEntity {
     @Column(length = 50)
     private ReportType type;   // ENUM → String
 
-    @Column(name = "image_url", length = 127)
-    private String imageUrl;
+    @ElementCollection
+    @CollectionTable(name = "report_image_urls", joinColumns = @JoinColumn(name = "report_id"))
+    @Column(name = "image_url", length = 500)
+    @Builder.Default
+    private List<String> imageUrls = new ArrayList<>();
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "rentId", nullable = false)

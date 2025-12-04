@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -18,7 +19,7 @@ public class ReportResponse {
     private String content;
     private ReportType type;
     private ReportStatus status;
-    private String imageUrl;
+    private List<String> imageUrls;
     private Integer delayDays;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -32,7 +33,7 @@ public class ReportResponse {
                 .content(report.getContent())
                 .type(report.getType())
                 .status(report.getStatus())
-                .imageUrl(report.getImageUrl())
+                .imageUrls(report.getImageUrls())
                 .delayDays(report.getDelayDays())
                 .createdAt(report.getCreatedAt())
                 .updatedAt(report.getUpdatedAt())

@@ -10,13 +10,24 @@ import com.backthree.cohobby.domain.report.entity.ReportStatus;
 import com.backthree.cohobby.domain.report.entity.ReportType;
 import com.backthree.cohobby.domain.report.repository.ReportRepository;
 import com.backthree.cohobby.domain.user.entity.User;
+import com.backthree.cohobby.global.exception.GeneralException;
+import com.backthree.cohobby.global.common.response.status.ErrorStatus;
+import io.awspring.cloud.s3.ObjectMetadata;
+import io.awspring.cloud.s3.S3Resource;
+import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +38,10 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final RentRepository rentRepository;
     private final PaymentService paymentService;
+    private final S3Template s3Template;
+
+    @Value("${spring.cloud.aws.s3.bucket}")
+    private String bucket;
 
     // 신고 생성
     public ReportResponse createReport(CreateReportRequest request, User user) {
@@ -53,13 +68,27 @@ public class ReportService {
             }
         }
 
+        // 이미지 업로드 (S3) - 최대 5개
+        List<String> imageUrls = new ArrayList<>();
+        if (request.getImages() != null && !request.getImages().isEmpty()) {
+            if (request.getImages().size() > 5) {
+                throw new IllegalArgumentException("이미지는 최대 5개까지 업로드할 수 있습니다.");
+            }
+            for (MultipartFile image : request.getImages()) {
+                if (image != null && !image.isEmpty()) {
+                    String imageUrl = uploadImageToS3(image);
+                    imageUrls.add(imageUrl);
+                }
+            }
+        }
+
         Report report = Report.builder()
                 .rent(rent)
                 .user(user)
                 .type(request.getType())
                 .title(request.getTitle())
                 .content(request.getContent())
-                .imageUrl(request.getImageUrl())
+                .imageUrls(imageUrls)
                 .delayDays(request.getDelayDays())
                 .status(ReportStatus.OPEN)
                 .createdAt(LocalDateTime.now())
@@ -137,6 +166,48 @@ public class ReportService {
         return reportRepository.findByStatus(status).stream()
                 .map(ReportResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    // S3에 이미지 업로드
+    private String uploadImageToS3(MultipartFile file) {
+        // 파일 형식 검사
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new GeneralException(ErrorStatus.NOT_IMAGE_FILE);
+        }
+
+        try (InputStream inputStream = file.getInputStream()) {
+            // 파일 이름 중복 방지(UUID 사용)
+            String originalFileName = file.getOriginalFilename();
+            String extension = getExtension(originalFileName);
+            String uuidFileName = "reports/" + UUID.randomUUID().toString() + extension;
+
+            // 메타데이터 설정
+            ObjectMetadata metadata = ObjectMetadata.builder()
+                    .contentType(contentType)
+                    .build();
+
+            // S3에 업로드
+            S3Resource resource = s3Template.upload(bucket, uuidFileName, inputStream, metadata);
+            return resource.getURL().toString();
+        } catch (IOException e) {
+            throw new GeneralException(ErrorStatus.S3_UPLOAD_FAIL);
+        } catch (Exception e) {
+            throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // 확장자 추출 메서드
+    private String getExtension(String fileName) {
+        if (fileName == null) {
+            throw new GeneralException(ErrorStatus.INVALID_FILE_EXTENSION);
+        }
+
+        try {
+            return fileName.substring(fileName.lastIndexOf("."));
+        } catch (StringIndexOutOfBoundsException e) {
+            throw new GeneralException(ErrorStatus.INVALID_FILE_EXTENSION);
+        }
     }
 }
 
