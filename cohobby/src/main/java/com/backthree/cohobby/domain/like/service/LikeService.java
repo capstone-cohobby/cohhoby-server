@@ -6,6 +6,8 @@ import com.backthree.cohobby.domain.post.dto.response.GetPostResponse;
 import com.backthree.cohobby.domain.post.entity.Post;
 import com.backthree.cohobby.domain.post.entity.PostStatus;
 import com.backthree.cohobby.domain.post.repository.PostRepository;
+import com.backthree.cohobby.domain.rent.entity.RentStatus;
+import com.backthree.cohobby.domain.rent.repository.RentRepository;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.repository.UserRepository;
 import com.backthree.cohobby.global.common.response.status.ErrorStatus;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,6 +28,7 @@ public class LikeService {
     private final LikeRepository likeRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final RentRepository rentRepository;
 
     @Transactional
     public boolean toggleLike(Long postId, Long userId) {
@@ -79,7 +83,16 @@ public class LikeService {
         posts.forEach(post -> post.getImages().size());
         
         return posts.stream()
-                .map(GetPostResponse::fromEntity)
+                .map(post -> {
+                    // 활성 대여 확인 (CONFIRMED, ONGOING 상태가 있으면 대여 불가)
+                    boolean hasActiveRent = rentRepository.existsByPostAndStatusIn(
+                        post, 
+                        Arrays.asList(RentStatus.CONFIRMED, RentStatus.ONGOING)
+                    );
+                    boolean available = !hasActiveRent;
+                    
+                    return GetPostResponse.fromEntity(post, available);
+                })
                 .collect(Collectors.toList());
     }
 }
