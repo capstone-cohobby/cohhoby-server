@@ -52,7 +52,17 @@ public class RentalFeeAutoPaymentScheduler {
                     continue;
                 }
 
-                // 대여료 자동결제 실행
+                // 최초 대여료 결제인지 확인 (대여료 결제 이력이 없는 경우)
+                boolean hasAnyRentalFeePayment = paymentRepository.findByRent(rent).stream()
+                        .anyMatch(payment -> payment.getPaymentType() == PaymentType.RENTAL_FEE);
+
+                // 최초 대여료 결제는 자동결제하지 않음 (수동 결제 필요)
+                if (!hasAnyRentalFeePayment) {
+                    log.info("최초 대여료 결제는 자동결제 대상이 아닙니다. 수동 결제가 필요합니다. rentId={}", rent.getId());
+                    continue;
+                }
+
+                // 대여료 자동결제 실행 (연장 대여 등 이미 대여료 결제가 있었던 경우)
                 Payment payment = paymentService.processRentalFeeAutoPayment(rent);
                 log.info("대여료 자동결제 성공: rentId={}, paymentId={}, amount={}",
                         rent.getId(), payment.getId(), rent.getTotalPrice());
