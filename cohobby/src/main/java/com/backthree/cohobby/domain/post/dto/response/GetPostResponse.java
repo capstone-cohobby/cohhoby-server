@@ -44,19 +44,20 @@ public class GetPostResponse {
     private String userNickname;
 
     public static GetPostResponse fromEntity(Post post) {
-        // 이미지 URL 추출: Image 엔티티의 첫 번째 이미지를 우선 사용, 없으면 post.imageUrl 사용
-        String imageUrl = null;
-        if (post.getImages() != null && !post.getImages().isEmpty()) {
-            // Image 엔티티에서 첫 번째 이미지 URL 가져오기
+        // 이미지 URL 추출: Post.imageUrl(대표 이미지)를 우선 사용, 없으면 Image 엔티티의 첫 번째 이미지 사용
+        String imageUrl = post.getImageUrl();
+        
+        // Post.imageUrl이 없으면 Image 엔티티에서 첫 번째 이미지 사용
+        if (imageUrl == null && post.getImages() != null && !post.getImages().isEmpty()) {
             imageUrl = post.getImages().stream()
                     .filter(image -> image.getImageUrl() != null)
+                    .sorted((img1, img2) -> Long.compare(
+                        img1.getId() != null ? img1.getId() : Long.MAX_VALUE,
+                        img2.getId() != null ? img2.getId() : Long.MAX_VALUE
+                    )) // ID 순서로 정렬 (가장 먼저 등록한 이미지)
                     .map(image -> image.getImageUrl())
                     .findFirst()
                     .orElse(null);
-        }
-        // Image 엔티티에 이미지가 없으면 post.imageUrl 사용
-        if (imageUrl == null) {
-            imageUrl = post.getImageUrl();
         }
 
         return GetPostResponse.builder()

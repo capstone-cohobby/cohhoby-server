@@ -58,10 +58,14 @@ public class GetPostDetailResponse {
     private String userProfilePicture;
 
     public static GetPostDetailResponse fromEntity(Post post) {
-        // 이미지 URL 목록 추출
+        // 이미지 URL 목록 추출 (ID 순서대로 정렬 - 가장 먼저 등록한 이미지부터)
         List<String> imageUrls = post.getImages().stream()
+                .filter(image -> image.getImageUrl() != null)
+                .sorted((img1, img2) -> Long.compare(
+                    img1.getId() != null ? img1.getId() : Long.MAX_VALUE,
+                    img2.getId() != null ? img2.getId() : Long.MAX_VALUE
+                )) // ID 순서로 정렬 (가장 먼저 등록한 이미지가 먼저)
                 .map(image -> image.getImageUrl())
-                .filter(url -> url != null)
                 .collect(Collectors.toList());
         
         // 이미지가 없고 imageUrl이 있으면 imageUrl 추가

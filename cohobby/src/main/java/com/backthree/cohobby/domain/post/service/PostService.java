@@ -174,12 +174,24 @@ public class PostService {
             return UpdateImageResponse.from(Collections.emptyList());
         }
 
+        // 기존 이미지 확인 (LAZY 로딩을 위해)
+        boolean hasExistingImages = !post.getImages().isEmpty();
+        
         // 이미지 파일별로 업로드 & 저장
         List<String> uploadedUrls = new ArrayList<>();
+        String firstImageUrl = null;
+        boolean isFirstImage = true;
+        
         for(MultipartFile file : files){
             String imageUrl = uploadSingleImage(file);
             if(imageUrl != null){
                 uploadedUrls.add(imageUrl);
+                
+                // 첫 번째 이미지를 저장
+                if(isFirstImage){
+                    firstImageUrl = imageUrl;
+                    isFirstImage = false;
+                }
             }
             // DB에 저장
             Image postImage = Image.builder()
@@ -187,6 +199,12 @@ public class PostService {
                     .imageUrl(imageUrl)
                     .build();
             imageRepository.save(postImage);
+        }
+        
+        // 첫 번째 이미지를 대표 이미지로 설정 (기존 이미지가 없는 경우에만)
+        if(firstImageUrl != null && !hasExistingImages && post.getImageUrl() == null){
+            post.setImageUrl(firstImageUrl);
+            postRepository.save(post);
         }
 
         return UpdateImageResponse.from(uploadedUrls);
