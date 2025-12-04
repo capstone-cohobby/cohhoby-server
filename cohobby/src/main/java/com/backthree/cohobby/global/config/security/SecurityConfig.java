@@ -13,7 +13,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -127,6 +126,7 @@ public class SecurityConfig {
         allowedOrigins.add("http://localhost:3000");
         allowedOrigins.add("http://127.0.0.1:3000");
         allowedOrigins.add("https://cohobby-git-dev-sunggyeongs-projects.vercel.app");
+        allowedOrigins.add("https://cohobby.duckdns.org");
         
         // 환경변수로 설정된 프론트엔드 URL 추가
         if (frontendUrl != null && !frontendUrl.isEmpty()) {
