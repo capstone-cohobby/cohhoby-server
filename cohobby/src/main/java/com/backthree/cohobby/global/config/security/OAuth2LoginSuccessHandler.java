@@ -79,7 +79,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         } else {
             // 기본값: 프론트엔드 로그인 페이지로 리다이렉트 (동적 URL 사용)
             // 서버 포트를 프론트엔드 포트로 변경
-            String frontendUrl = "cohobby-git-dev-sunggyeongs-projects.vercel.app";
+            String frontendUrl = "https://cohobby-git-dev-sunggyeongs-projects.vercel.app?_vercel_share=CUntubjwhufBXSZH6L1GLnJE121IrOdg";
             if (!frontendUrl.contains(":3000") && !frontendUrl.contains(":80") && !frontendUrl.contains(":443")) {
                 // 포트가 없거나 다른 경우 명시적으로 3000 포트 추가
                 frontendUrl = scheme + "://" + serverName;
