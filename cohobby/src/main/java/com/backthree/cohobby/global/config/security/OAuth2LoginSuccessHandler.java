@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -22,6 +23,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl; // yml에서 값 주입
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException{
@@ -79,12 +82,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         } else {
             // 기본값: 프론트엔드 로그인 페이지로 리다이렉트 (동적 URL 사용)
             // 서버 포트를 프론트엔드 포트로 변경
-            String frontendUrl = "http://localhost:3000";
-            if (!frontendUrl.contains(":3000") && !frontendUrl.contains(":80") && !frontendUrl.contains(":443")) {
-                // 포트가 없거나 다른 경우 명시적으로 3000 포트 추가
-                frontendUrl = scheme + "://" + serverName + ":3000";
-            }
-            targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/login")
+
+            // ... (중략) ...
+
+            // 리다이렉트 로직
+            targetUrl = UriComponentsBuilder.fromUriString(frontendUrl)
+                    .path("/login")
                     .queryParam("accessToken", tokenDTO.getAccessToken())
                     .queryParam("refreshToken", tokenDTO.getRefreshToken())
                     .build().toUriString();
