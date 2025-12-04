@@ -42,8 +42,11 @@ public class GetPostResponse {
 
     @Schema(description = "작성자 닉네임", example = "user123")
     private String userNickname;
+    
+    @Schema(description = "대여 가능 여부", example = "true")
+    private Boolean available;
 
-    public static GetPostResponse fromEntity(Post post) {
+    public static GetPostResponse fromEntity(Post post, boolean available) {
         // 이미지 URL 추출: Post.imageUrl(대표 이미지)를 우선 사용, 없으면 Image 엔티티의 첫 번째 이미지 사용
         String imageUrl = post.getImageUrl();
         
@@ -73,6 +76,7 @@ public class GetPostResponse {
                         ? post.getHobby().getCategory().getName() : null)
                 .userId(post.getUser() != null ? post.getUser().getId() : null)
                 .userNickname(post.getUser() != null ? post.getUser().getNickname() : null)
+                .available(available)
                 .build();
     }
 }

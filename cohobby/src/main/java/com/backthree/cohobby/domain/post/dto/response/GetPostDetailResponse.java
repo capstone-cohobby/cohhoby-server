@@ -56,8 +56,11 @@ public class GetPostDetailResponse {
 
     @Schema(description = "작성자 프로필 사진", example = "https://example.com/profile.jpg")
     private String userProfilePicture;
+    
+    @Schema(description = "대여 가능 여부", example = "true")
+    private Boolean available;
 
-    public static GetPostDetailResponse fromEntity(Post post) {
+    public static GetPostDetailResponse fromEntity(Post post, boolean available) {
         // 이미지 URL 목록 추출 (ID 순서대로 정렬 - 가장 먼저 등록한 이미지부터)
         List<String> imageUrls = post.getImages().stream()
                 .filter(image -> image.getImageUrl() != null)
@@ -90,6 +93,7 @@ public class GetPostDetailResponse {
                 .userId(post.getUser() != null ? post.getUser().getId() : null)
                 .userNickname(post.getUser() != null ? post.getUser().getNickname() : null)
                 .userProfilePicture(post.getUser() != null ? post.getUser().getProfilePicture() : null)
+                .available(available)
                 .build();
     }
 }

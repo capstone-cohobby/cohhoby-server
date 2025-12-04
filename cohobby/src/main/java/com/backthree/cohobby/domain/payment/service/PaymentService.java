@@ -59,6 +59,12 @@ public class PaymentService {
         //Rent 정보 조회
         Rent rent = rentRepository.findById(request.rentId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대여입니다."));
+        
+        // 확정된 대여(CONFIRMED, ONGOING)에 대해서는 추가 결제 불가
+        if (rent.getStatus() == RentStatus.CONFIRMED || rent.getStatus() == RentStatus.ONGOING) {
+            throw new IllegalArgumentException("이미 확정된 대여입니다. 반납 전까지 추가 결제가 불가능합니다.");
+        }
+        
         if(!rent.getTotalPrice().equals(request.amount())){ //Rent 대여 금액과 결제 금액 비교
             throw new IllegalArgumentException("결제 요청 금액이 대여 금액과 일치하지 않습니다.");
         }
