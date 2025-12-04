@@ -126,6 +126,8 @@ public class SecurityConfig {
         allowedOrigins.add("http://localhost:3000");
         allowedOrigins.add("http://127.0.0.1:3000");
         allowedOrigins.add("https://cohobby-git-dev-sunggyeongs-projects.vercel.app");
+        // 프론트엔드가 같은 도메인에서 제공되는 경우를 위해 백엔드 도메인도 허용
+        // (프론트엔드가 별도 도메인에 배포되는 경우 환경변수로 추가)
         allowedOrigins.add("https://cohobby.duckdns.org");
         
         // 환경변수로 설정된 프론트엔드 URL 추가
