@@ -82,7 +82,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             String frontendUrl = "cohobby-git-dev-sunggyeongs-projects.vercel.app";
             if (!frontendUrl.contains(":3000") && !frontendUrl.contains(":80") && !frontendUrl.contains(":443")) {
                 // 포트가 없거나 다른 경우 명시적으로 3000 포트 추가
-                frontendUrl = scheme + "://" + serverName + ":3000";
+                frontendUrl = scheme + "://" + serverName;
             }
             targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/login")
                     .queryParam("accessToken", tokenDTO.getAccessToken())
