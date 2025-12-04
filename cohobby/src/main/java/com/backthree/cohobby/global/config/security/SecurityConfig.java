@@ -126,6 +126,7 @@ public class SecurityConfig {
         List<String> allowedOrigins = new ArrayList<>();
         allowedOrigins.add("http://localhost:3000");
         allowedOrigins.add("http://127.0.0.1:3000");
+        allowedOrigins.add("https://cohobby-git-dev-sunggyeongs-projects.vercel.app");
         
         // 환경변수로 설정된 프론트엔드 URL 추가
         if (frontendUrl != null && !frontendUrl.isEmpty()) {
