@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,9 +26,9 @@ public class ReportController {
     private final ReportService reportService;
 
     @Operation(summary = "신고 생성", description = "대여 관련 신고를 생성합니다.")
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BaseResponse<ReportResponse>> createReport(
-            @Valid @RequestBody CreateReportRequest request,
+            @Valid @ModelAttribute CreateReportRequest request,
             @Parameter(hidden = true) @CurrentUser User user
     ) {
         ReportResponse response = reportService.createReport(request, user);
