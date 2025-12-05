@@ -8,6 +8,8 @@ import com.backthree.cohobby.domain.post.entity.Post;
 import com.backthree.cohobby.domain.post.entity.PostStatus;
 import com.backthree.cohobby.domain.post.repository.ImageRepository;
 import com.backthree.cohobby.domain.post.repository.PostRepository;
+import com.backthree.cohobby.domain.rent.entity.RentStatus;
+import com.backthree.cohobby.domain.rent.repository.RentRepository;
 import com.backthree.cohobby.domain.user.entity.User;
 import com.backthree.cohobby.domain.user.repository.UserRepository;
 import com.backthree.cohobby.domain.user.service.UserService;
@@ -37,6 +39,7 @@ public class PostService {
     private final HobbyService hobbyService;
     private final S3Template s3Template;
     private final ImageRepository imageRepository;
+    private final RentRepository rentRepository;
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
@@ -174,12 +177,24 @@ public class PostService {
             return UpdateImageResponse.from(Collections.emptyList());
         }
 
+        // 기존 이미지 확인 (LAZY 로딩을 위해)
+        boolean hasExistingImages = !post.getImages().isEmpty();
+        
         // 이미지 파일별로 업로드 & 저장
         List<String> uploadedUrls = new ArrayList<>();
+        String firstImageUrl = null;
+        boolean isFirstImage = true;
+        
         for(MultipartFile file : files){
             String imageUrl = uploadSingleImage(file);
             if(imageUrl != null){
                 uploadedUrls.add(imageUrl);
+                
+                // 첫 번째 이미지를 저장
+                if(isFirstImage){
+                    firstImageUrl = imageUrl;
+                    isFirstImage = false;
+                }
             }
             // DB에 저장
             Image postImage = Image.builder()
@@ -187,6 +202,12 @@ public class PostService {
                     .imageUrl(imageUrl)
                     .build();
             imageRepository.save(postImage);
+        }
+        
+        // 첫 번째 이미지를 대표 이미지로 설정 (기존 이미지가 없는 경우에만)
+        if(firstImageUrl != null && !hasExistingImages && post.getImageUrl() == null){
+            post.setImageUrl(firstImageUrl);
+            postRepository.save(post);
         }
 
         return UpdateImageResponse.from(uploadedUrls);
@@ -201,10 +222,17 @@ public class PostService {
         // 이미지 로딩 (LAZY 로딩을 위해)
         post.getImages().size();
         
+        // 활성 대여 확인 (CONFIRMED, ONGOING 상태가 있으면 대여 불가)
+        boolean hasActiveRent = rentRepository.existsByPostAndStatusIn(
+            post, 
+            Arrays.asList(RentStatus.CONFIRMED, RentStatus.ONGOING)
+        );
+        boolean available = !hasActiveRent;
+        
         // PUBLISHED 상태인 게시물만 조회 가능 (작성자는 DRAFT도 조회 가능)
         // TODO: 작성자 확인 로직 추가 필요시
         
-        return GetPostDetailResponse.fromEntity(post);
+        return GetPostDetailResponse.fromEntity(post, available);
     }
 
     // 내 등록 상품 조회
@@ -219,9 +247,26 @@ public class PostService {
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
         
+        return toGetPostResponseList(posts);
+    }
+    
+    // Post 리스트를 GetPostResponse 리스트로 변환 (활성 대여 여부 포함)
+    public List<GetPostResponse> toGetPostResponseList(List<Post> posts) {
         return posts.stream()
-                .map(GetPostResponse::fromEntity)
+                .map(post -> toGetPostResponse(post))
                 .collect(java.util.stream.Collectors.toList());
+    }
+    
+    // Post를 GetPostResponse로 변환 (활성 대여 여부 포함)
+    private GetPostResponse toGetPostResponse(Post post) {
+        // 활성 대여 확인 (CONFIRMED, ONGOING 상태가 있으면 대여 불가)
+        boolean hasActiveRent = rentRepository.existsByPostAndStatusIn(
+            post, 
+            Arrays.asList(RentStatus.CONFIRMED, RentStatus.ONGOING)
+        );
+        boolean available = !hasActiveRent;
+        
+        return GetPostResponse.fromEntity(post, available);
     }
 
     // 확장자 추출 메서드

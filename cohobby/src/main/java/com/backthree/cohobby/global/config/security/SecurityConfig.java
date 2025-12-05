@@ -121,24 +121,29 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 환경변수에서 프론트엔드 URL 가져오기 (없으면 기본값: localhost:3000)
-        List<String> allowedOrigins = new ArrayList<>();
-        allowedOrigins.add("http://localhost:3000");
-        allowedOrigins.add("http://127.0.0.1:3000");
-        allowedOrigins.add("https://cohobby-git-dev-sunggyeongs-projects.vercel.app");
-        // 프론트엔드가 같은 도메인에서 제공되는 경우를 위해 백엔드 도메인도 허용
-        // (프론트엔드가 별도 도메인에 배포되는 경우 환경변수로 추가)
-        allowedOrigins.add("https://cohobby.duckdns.org");
+        // Origin 패턴 사용 (setAllowedOrigins와 setAllowedOriginPatterns를 동시에 사용할 수 없음)
+        List<String> allowedOriginPatterns = new ArrayList<>();
+        
+        // 로컬 개발 환경
+        allowedOriginPatterns.add("http://localhost:*");
+        allowedOriginPatterns.add("http://127.0.0.1:*");
+        
+        // Vercel 배포 URL 패턴 허용 (모든 Vercel 배포 허용)
+        allowedOriginPatterns.add("https://*.vercel.app");
+        
+        // 백엔드 도메인 (같은 도메인에서 프론트엔드 제공 시)
+        allowedOriginPatterns.add("https://cohobby.duckdns.org");
         
         // 환경변수로 설정된 프론트엔드 URL 추가
         if (frontendUrl != null && !frontendUrl.isEmpty()) {
-            allowedOrigins.add(frontendUrl);
+            allowedOriginPatterns.add(frontendUrl);
         }
-
-        config.setAllowedOrigins(allowedOrigins);
+        
+        config.setAllowedOriginPatterns(allowedOriginPatterns);
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L); // preflight 요청 캐시 시간
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

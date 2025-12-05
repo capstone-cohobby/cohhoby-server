@@ -1,5 +1,6 @@
 package com.backthree.cohobby.domain.rent.repository;
 
+import com.backthree.cohobby.domain.post.entity.Post;
 import com.backthree.cohobby.domain.rent.entity.Rent;
 import com.backthree.cohobby.domain.rent.entity.RentStatus;
 import com.backthree.cohobby.domain.user.entity.User;
@@ -36,4 +37,8 @@ public interface RentRepository extends JpaRepository<Rent, Long> {
     List<Rent> findByStartAtDateAndStatus(@Param("date") LocalDate date, @Param("status") RentStatus status);
 
     boolean existsByBorrowerAndStatusIn(User borrower, Collection<RentStatus> statuses);
+    
+    // Post에 대한 활성 대여(CONFIRMED, ONGOING) 존재 여부 확인
+    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Rent r WHERE r.post = :post AND r.status IN :statuses")
+    boolean existsByPostAndStatusIn(@Param("post") Post post, @Param("statuses") Collection<RentStatus> statuses);
 }

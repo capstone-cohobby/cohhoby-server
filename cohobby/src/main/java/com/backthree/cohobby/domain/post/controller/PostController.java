@@ -126,9 +126,7 @@ public class PostController {
         List<Post> posts = postQueryService.getPosts(query, "search", null);
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
-        List<GetPostResponse> response = posts.stream()
-                .map(GetPostResponse::fromEntity)
-                .collect(Collectors.toList());
+        List<GetPostResponse> response = postService.toGetPostResponseList(posts);
         return BaseResponse.onSuccess(SuccessStatus._OK, response);
     }
 
@@ -144,9 +142,7 @@ public class PostController {
         List<Post> posts = postQueryService.getPosts(String.valueOf(categoryId), "category", null);
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
-        List<GetPostResponse> response = posts.stream()
-                .map(GetPostResponse::fromEntity)
-                .collect(Collectors.toList());
+        List<GetPostResponse> response = postService.toGetPostResponseList(posts);
         return BaseResponse.onSuccess(SuccessStatus._OK, response);
     }
 
@@ -162,9 +158,7 @@ public class PostController {
         List<Post> posts = postQueryService.getPosts(String.valueOf(hobbyId), "hobby", null);
         // Image 엔티티 로딩 (LAZY 로딩을 위해)
         posts.forEach(post -> post.getImages().size());
-        List<GetPostResponse> response = posts.stream()
-                .map(GetPostResponse::fromEntity)
-                .collect(Collectors.toList());
+        List<GetPostResponse> response = postService.toGetPostResponseList(posts);
         return BaseResponse.onSuccess(SuccessStatus._OK, response);
     }
 
